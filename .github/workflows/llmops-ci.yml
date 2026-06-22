@@ -1,0 +1,65 @@
+name: LLMOps CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-llmops:
+    name: Offline LLMOps gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --locked --dev
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Compile Python modules
+        run: >
+          uv run python -m py_compile
+          app_backend.py
+          app_frontend.py
+          llmops/schema.py
+          llmops/metrics.py
+          llmops/registry.py
+          llmops/tracing.py
+          scripts/run_golden_eval.py
+
+      - name: Run unit tests
+        run: uv run pytest -q
+
+      - name: Run offline golden eval
+        run: >
+          uv run python scripts/run_golden_eval.py
+          --min-field-accuracy 0.80
+          --output-path outputs/llmops_eval_report.json
+
+      - name: Upload LLMOps eval report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: llmops-eval-report
+          path: outputs/llmops_eval_report.json
+          if-no-files-found: warn

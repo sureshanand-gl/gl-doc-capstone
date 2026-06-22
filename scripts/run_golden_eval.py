@@ -7,20 +7,25 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from llmops.local_extraction import extract_invoice_fields_local
-from llmops.metrics import build_eval_report, compute_field_accuracy, load_golden_dataset
+from llmops.local_extraction import extract_invoice_fields_local  # noqa: E402
+from llmops.metrics import build_eval_report, compute_field_accuracy, load_golden_dataset  # noqa: E402
 
 
 def parse_args() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--min-field-accuracy", type=float, default=0.80)
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=REPO_ROOT / "outputs" / "llmops_eval_report.json",
+    )
     return parser
 
 
 def main() -> int:
     args = parse_args().parse_args()
     dataset_path = REPO_ROOT / "data" / "golden" / "invoice_extraction_v1.jsonl"
-    report_path = REPO_ROOT / "outputs" / "llmops_eval_report.json"
+    report_path = args.output_path
 
     dataset = load_golden_dataset(dataset_path)
     rows = []

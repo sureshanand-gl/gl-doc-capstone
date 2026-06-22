@@ -1,5 +1,7 @@
 # Milestone 1 Invoice Understanding (EasyOCR + GPT-4o-mini)
 
+[![LLMOps CI](https://github.com/sureshanand-gl/gl-doc-capstone/actions/workflows/llmops-ci.yml/badge.svg)](https://github.com/sureshanand-gl/gl-doc-capstone/actions/workflows/llmops-ci.yml)
+
 This project implements Milestone 1 of the invoice understanding pipeline:
 - OCR on JPG/PDF/DOCX inputs using local EasyOCR models
 - Field extraction using GPT-4o-mini
@@ -23,6 +25,8 @@ This project implements Milestone 1 of the invoice understanding pipeline:
 	Validated OCR-text golden examples for offline evals.
 - `scripts/run_golden_eval.py`:
 	Deterministic offline golden-data evaluation script.
+- `docs/llmops.md`:
+	LLMOps pipeline guide covering local gates, CI, prompt/schema versioning, trace privacy, and fallback metadata.
 - `craft_mlt_25k.pth`, `english_g2.pth`:
 	Required local EasyOCR model files.
 
@@ -68,14 +72,18 @@ Then upload any `jpg`, `jpeg`, `png`, `pdf`, or `docx` file.
 ## 4. Quick Validation
 
 ```bash
+uv run ruff check .
 uv run python -m py_compile app_backend.py app_frontend.py
+uv run pytest -q
 ```
 
 Offline eval:
 
 ```bash
-uv run python scripts/run_golden_eval.py --min-field-accuracy 0.80
+uv run python scripts/run_golden_eval.py --min-field-accuracy 0.80 --output-path outputs/llmops_eval_report.json
 ```
+
+For the full local and GitHub Actions LLMOps workflow, see `docs/llmops.md`.
 
 ## 5. Code Logic in `03_milestone1_easyocr_only.ipynb`
 

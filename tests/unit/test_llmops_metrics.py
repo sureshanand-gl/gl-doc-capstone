@@ -1,4 +1,7 @@
 from pathlib import Path
+import json
+import subprocess
+import sys
 
 from llmops.metrics import build_eval_report, compute_field_accuracy, load_golden_dataset
 from llmops.tracing import write_trace_record
@@ -83,3 +86,54 @@ def test_build_eval_report_includes_versions_and_threshold_status():
     assert report["schema_version"] == "v1"
     assert report["average_field_accuracy"] == 0.875
     assert report["meets_threshold"] is False
+
+
+def test_golden_eval_cli_writes_report_to_requested_output_path(tmp_path: Path):
+    repo_root = Path(__file__).resolve().parents[2]
+    report_path = tmp_path / "reports" / "llmops_eval_report.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_golden_eval.py",
+            "--min-field-accuracy",
+            "0.80",
+            "--output-path",
+            str(report_path),
+        ],
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert report_path.exists()
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["meets_threshold"] is True
+    assert payload["minimum_field_accuracy"] == 0.8
+
+
+def test_golden_eval_cli_returns_nonzero_when_threshold_fails(tmp_path: Path):
+    repo_root = Path(__file__).resolve().parents[2]
+    report_path = tmp_path / "llmops_eval_report.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_golden_eval.py",
+            "--min-field-accuracy",
+            "1.01",
+            "--output-path",
+            str(report_path),
+        ],
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    assert payload["meets_threshold"] is False
+    assert payload["minimum_field_accuracy"] == 1.01
