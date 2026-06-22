@@ -1,0 +1,67 @@
+{
+  "documents": 2,
+  "prompt_version": "v1",
+  "schema_version": "v1",
+  "minimum_field_accuracy": 0.8,
+  "average_field_accuracy": 0.9375,
+  "average_latency_ms": 2823.53,
+  "meets_threshold": true,
+  "invalid_documents": 0,
+  "fallback_documents": 0,
+  "results": [
+    {
+      "document_id": "golden-invoice-001",
+      "source_name": "sample_invoice_text_001.txt",
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "prompt_version": "v1",
+      "schema_version": "v1",
+      "latency_ms": 3554.45,
+      "validation_status": "valid",
+      "validation_errors": [],
+      "field_accuracy": 1.0,
+      "matched_fields": 8,
+      "total_fields": 8,
+      "missing_fields": [],
+      "fallback_reason": null,
+      "fields": {
+        "invoice_number": "INV-1001",
+        "invoice_date": "01/15/2026",
+        "due_date": "01/30/2026",
+        "total": "250.00",
+        "tax": "12.50",
+        "vendor_name": "Acme Supplies",
+        "customer_name": "Example Customer",
+        "currency": "USD"
+      }
+    },
+    {
+      "document_id": "golden-invoice-002",
+      "source_name": "sample_invoice_text_002.txt",
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "prompt_version": "v1",
+      "schema_version": "v1",
+      "latency_ms": 2092.61,
+      "validation_status": "valid",
+      "validation_errors": [],
+      "field_accuracy": 0.875,
+      "matched_fields": 7,
+      "total_fields": 8,
+      "missing_fields": [
+        "currency"
+      ],
+      "fallback_reason": null,
+      "fields": {
+        "invoice_number": "NX-2026-77",
+        "invoice_date": "02/10/2026",
+        "due_date": null,
+        "total": "999.99",
+        "tax": "99.99",
+        "vendor_name": "NexaWare Systems",
+        "customer_name": null,
+        "currency": "USD"
+      }
+    }
+  ]
+}

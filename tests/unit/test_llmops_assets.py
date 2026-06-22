@@ -16,6 +16,16 @@ def test_prompt_registry_resolves_invoice_v1():
     assert invoice_entry.schema_path == repo_root / "schemas" / "invoice_v1.json"
 
 
+def test_invoice_prompt_requires_schema_compatible_string_values():
+    repo_root = Path(__file__).resolve().parents[2]
+    prompt = (repo_root / "prompts" / "invoices" / "v1" / "system.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Return every non-null value as a JSON string" in prompt
+    assert "Infer currency from symbols" in prompt
+
+
 def test_schema_accepts_invoice_fields_and_fallback_metadata():
     fields = {
         "invoice_number": "INV-1001",

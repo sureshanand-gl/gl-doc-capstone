@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Live LLMOps Evaluation Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #1f2933; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #d8dee4; border-radius: 6px; padding: 14px; }
+    .metric { font-size: 28px; font-weight: 700; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #d8dee4; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f6f8fa; }
+    img { max-width: 100%; border: 1px solid #d8dee4; border-radius: 6px; }
+    pre { background: #f6f8fa; padding: 16px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Live LLMOps Evaluation Report</h1>
+  <div class="cards">
+    <div class="card"><div>Documents</div><div class="metric">2</div></div>
+    <div class="card"><div>Average Accuracy</div><div class="metric">93.75%</div></div>
+    <div class="card"><div>Average Latency</div><div class="metric">2823.53 ms</div></div>
+    <div class="card"><div>Meets Threshold</div><div class="metric">True</div></div>
+  </div>
+  <h2>Charts</h2>
+  <p><img src="field_accuracy_chart.png" alt="Field accuracy chart"></p>
+  <p><img src="provider_latency_chart.png" alt="Provider latency chart"></p>
+  <h2>Document Results</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Document</th><th>Source</th><th>Provider</th><th>Model</th>
+        <th>Accuracy</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
+        <th>Missing Fields</th>
+      </tr>
+    </thead>
+    <tbody><tr><td>golden-invoice-001</td><td>sample_invoice_text_001.txt</td><td>openai</td><td>gpt-4o-mini</td><td>100.00%</td><td>3554.45</td><td>valid</td><td></td><td></td></tr>
+<tr><td>golden-invoice-002</td><td>sample_invoice_text_002.txt</td><td>openai</td><td>gpt-4o-mini</td><td>87.50%</td><td>2092.61</td><td>valid</td><td></td><td>currency</td></tr></tbody>
+  </table>
+  <h2>Fallbacks and Errors</h2>
+  <ul><li>No validation or provider errors recorded.</li></ul>
+  <h2>Pipeline DAG</h2>
+  <pre>graph TD
+    A[Golden OCR dataset] --&gt; B[Prompt registry]
+    B --&gt; C[OpenAI-compatible live call]
+    C --&gt; D[Strict JSON parse]
+    D --&gt; E[Schema validation]
+    E --&gt; F[Field accuracy scoring]
+    F --&gt; G[JSON report]
+    F --&gt; H[PNG charts]
+    F --&gt; I[HTML report]
+</pre>
+</body>
+</html>

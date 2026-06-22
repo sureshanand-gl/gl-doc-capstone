@@ -25,6 +25,9 @@ This project implements Milestone 1 of the invoice understanding pipeline:
 	Validated OCR-text golden examples for offline evals.
 - `scripts/run_golden_eval.py`:
 	Deterministic offline golden-data evaluation script.
+- `scripts/run_llmops_pipeline.py`:
+	Live OpenAI-compatible LLMOps pipeline that generates JSON, HTML, PNG charts, and
+	a Mermaid pipeline DAG from golden examples.
 - `docs/llmops.md`:
 	LLMOps pipeline guide covering local gates, CI, prompt/schema versioning, trace privacy, and fallback metadata.
 - `craft_mlt_25k.pth`, `english_g2.pth`:
@@ -82,6 +85,17 @@ Offline eval:
 ```bash
 uv run python scripts/run_golden_eval.py --min-field-accuracy 0.80 --output-path outputs/llmops_eval_report.json
 ```
+
+Live LLMOps report with provider calls:
+
+```bash
+uv run python scripts/run_llmops_pipeline.py --dataset data/golden/invoice_extraction_v1.jsonl --output-dir outputs/llmops --model gpt-4o-mini --min-field-accuracy 0.80
+```
+
+This writes `outputs/llmops/live_eval_report.json`, `live_eval_report.html`,
+field accuracy and latency PNG charts, and `pipeline_dag.mmd`. `OPENAI_API_KEY` is
+required. `OPENAI_API_BASE` is optional and defaults to the configured OpenAI-compatible
+endpoint.
 
 For the full local and GitHub Actions LLMOps workflow, see `docs/llmops.md`.
 
