@@ -12,6 +12,8 @@ Return strict JSON only with keys:
 
 Rules:
 - Use `null` when value is missing.
+- Return every non-null value as a JSON string, including dates, totals, taxes, invoice numbers, names, and currency codes.
+- Infer currency from symbols: `$` means `USD`, `€` means `EUR`, and `₹` means `INR`.
 - Do not include markdown.
 - Do not include explanation text.
 - Do not add extra keys.

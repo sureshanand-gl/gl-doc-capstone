@@ -11,8 +11,10 @@ reviewable without requiring live LLM secrets in CI.
 - Invoice field schema: `schemas/invoice_v1.json`
 - Golden OCR-text examples: `data/golden/invoice_extraction_v1.jsonl`
 - Eval runner: `scripts/run_golden_eval.py`
+- Live LLMOps runner: `scripts/run_llmops_pipeline.py`
 - Runtime metadata helpers: `llmops/registry.py`, `llmops/schema.py`, `llmops/tracing.py`,
-  `llmops/metrics.py`
+  `llmops/metrics.py`, `llmops/live_provider.py`, `llmops/pipeline.py`,
+  `llmops/reporting.py`
 
 ## Local Gates
 
@@ -30,6 +32,40 @@ The golden eval exits with code `0` when average field accuracy meets the thresh
 code `1` when it does not. The report is written to `outputs/llmops_eval_report.json`
 by default, or to the path passed with `--output-path`.
 
+## Live LLMOps Pipeline
+
+The live pipeline calls the configured OpenAI-compatible provider once per golden
+example, validates strict JSON against the registered invoice schema, scores field
+accuracy, and writes graph/report artifacts.
+
+```bash
+uv run python scripts/run_llmops_pipeline.py `
+  --dataset data/golden/invoice_extraction_v1.jsonl `
+  --output-dir outputs/llmops `
+  --model gpt-4o-mini `
+  --min-field-accuracy 0.80
+```
+
+Required environment:
+
+- `OPENAI_API_KEY`
+- `OPENAI_API_BASE` optional; defaults to `https://aibe.mygreatlearning.com/openai/v1`
+
+The CLI loads `.env` by default for local runs. Use `--no-dotenv` when you want to
+validate only process-level environment variables, such as CI secret checks.
+
+Artifacts:
+
+- `outputs/llmops/live_eval_report.json`
+- `outputs/llmops/live_eval_report.html`
+- `outputs/llmops/field_accuracy_chart.png`
+- `outputs/llmops/provider_latency_chart.png`
+- `outputs/llmops/pipeline_dag.mmd`
+- `outputs/llmops/pipeline_dag.png` when Mermaid CLI (`mmdc`) is installed
+
+Malformed LLM JSON and schema-invalid responses are recorded as invalid live model
+results. The live evaluator does not score local regex fallback as live model success.
+
 ## GitHub Actions
 
 `.github/workflows/llmops-ci.yml` runs on pushes to `main`, pull requests, and manual
@@ -43,6 +79,11 @@ dispatch. It stays offline-only:
 The job installs the locked uv environment, runs lint, compiles Python modules, runs unit
 tests, runs the offline golden eval at `0.80` minimum field accuracy, and uploads
 `outputs/llmops_eval_report.json` as the `llmops-eval-report` artifact.
+
+The job then requires the `OPENAI_API_KEY` secret and runs the live LLMOps pipeline.
+`OPENAI_API_BASE` is optional. Live artifacts are uploaded as `live-llmops-report`.
+Per the project policy, provider outage, fork PR secret restrictions, or missing secrets
+can fail the workflow.
 
 ## Runtime Metadata
 

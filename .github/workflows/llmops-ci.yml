@@ -41,11 +41,15 @@ jobs:
           uv run python -m py_compile
           app_backend.py
           app_frontend.py
+          llmops/live_provider.py
+          llmops/pipeline.py
+          llmops/reporting.py
           llmops/schema.py
           llmops/metrics.py
           llmops/registry.py
           llmops/tracing.py
           scripts/run_golden_eval.py
+          scripts/run_llmops_pipeline.py
 
       - name: Run unit tests
         run: uv run pytest -q
@@ -62,4 +66,32 @@ jobs:
         with:
           name: llmops-eval-report
           path: outputs/llmops_eval_report.json
+          if-no-files-found: warn
+
+      - name: Require live LLM secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY secret is required for live LLMOps pipeline" >&2
+            exit 2
+          fi
+
+      - name: Run live LLMOps pipeline
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+        run: >
+          uv run python scripts/run_llmops_pipeline.py
+          --dataset data/golden/invoice_extraction_v1.jsonl
+          --output-dir outputs/llmops
+          --model gpt-4o-mini
+          --min-field-accuracy 0.80
+
+      - name: Upload live LLMOps artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: live-llmops-report
+          path: outputs/llmops
           if-no-files-found: warn
