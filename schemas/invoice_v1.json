@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InvoiceFieldsV1",
+  "type": "object",
+  "required": [
+    "invoice_number",
+    "invoice_date",
+    "due_date",
+    "total",
+    "tax",
+    "vendor_name",
+    "customer_name",
+    "currency"
+  ],
+  "properties": {
+    "invoice_number": {
+      "type": ["string", "null"]
+    },
+    "invoice_date": {
+      "type": ["string", "null"]
+    },
+    "due_date": {
+      "type": ["string", "null"]
+    },
+    "total": {
+      "type": ["string", "null"]
+    },
+    "tax": {
+      "type": ["string", "null"]
+    },
+    "vendor_name": {
+      "type": ["string", "null"]
+    },
+    "customer_name": {
+      "type": ["string", "null"]
+    },
+    "currency": {
+      "type": ["string", "null"]
+    },
+    "fallback_reason": {
+      "type": ["string", "null"]
+    },
+    "fallback_detail": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": false
+}

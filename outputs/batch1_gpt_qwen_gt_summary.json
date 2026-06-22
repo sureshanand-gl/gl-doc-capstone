@@ -1,0 +1,12 @@
+{
+  "rows_compared": 100,
+  "gpt_vs_qwen_scalar_match_rate_mean": 0.825,
+  "gpt_vs_qwen_item_count_match_rate": 1.0,
+  "gpt_vs_qwen_item_field_match_rate_mean": 0.8615997023809524,
+  "gpt_vs_gt_scalar_match_rate_mean": 0.779375,
+  "gpt_vs_gt_item_count_match_rate": 1.0,
+  "gpt_vs_gt_item_field_match_rate_mean": 0.6924940476190474,
+  "qwen_vs_gt_scalar_match_rate_mean": 0.753125,
+  "qwen_vs_gt_item_count_match_rate": 1.0,
+  "qwen_vs_gt_item_field_match_rate_mean": 0.6611235119047617
+}

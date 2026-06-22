@@ -1,0 +1,17 @@
+{
+  "milestone_1_requirements": {
+    "problem_definition_and_planning": "Covered via notebook intro + architecture artifact",
+    "data_understanding_and_preparation": "Covered via file discovery, quality profiling, preprocessing",
+    "exploratory_analysis_and_research": "Covered via profiling metrics and OCR baseline experiments",
+    "initial_development": "Covered via EasyOCR ingestion and Streamlit baseline app generation"
+  },
+  "artifacts": {
+    "architecture_mermaid": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_workflow_architecture.mmd",
+    "data_profile_csv": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_data_profile.csv",
+    "sample_results_jsonl": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_easyocr_sample_results.jsonl",
+    "sample_summary_json": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_easyocr_sample_summary.json",
+    "validation_metrics_csv": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_validation_metrics.csv",
+    "streamlit_app": "/Users/ankita.singh64/Documents/new-capstone/app_milestone1_easyocr.py"
+  },
+  "generated_at": "2026-06-16T14:02:58.263024"
+}

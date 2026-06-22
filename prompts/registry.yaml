@@ -1,0 +1,5 @@
+invoices:
+  v1:
+    prompt: prompts/invoices/v1/system.md
+    schema: schemas/invoice_v1.json
+    schema_version: v1

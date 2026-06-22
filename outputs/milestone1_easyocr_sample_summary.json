@@ -1,0 +1,9 @@
+{
+  "total_docs": 53,
+  "successful_docs": 53,
+  "failed_docs": 0,
+  "avg_confidence": 0.8692,
+  "avg_text_len": 836.04,
+  "elapsed_seconds": 277.16,
+  "output_jsonl": "/Users/ankita.singh64/Documents/new-capstone/outputs/milestone1_easyocr_sample_results.jsonl"
+}

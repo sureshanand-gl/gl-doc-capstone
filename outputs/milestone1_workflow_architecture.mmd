@@ -1,0 +1,16 @@
+
+flowchart TD
+    A[Input Documents
+JPG + PDF + DOCX] --> B[Data Discovery and Profiling]
+    B --> C[Preprocessing
+Denoise + Adaptive Threshold]
+    C --> D[EasyOCR
+CRAFT + english_g2]
+    D --> E[Text and Field Extraction
+Regex Baseline]
+    E --> F[Validation Metrics
+Coverage + Confidence]
+    F --> G[Retrieval Layer
+Keyword-overlap Baseline]
+    G --> H[Streamlit Interface]
+    H --> I[Milestone 1 Artifacts]
