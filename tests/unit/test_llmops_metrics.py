@@ -12,29 +12,71 @@ def test_metrics_compute_field_accuracy_and_missing_fields():
         "invoice_number": "INV-1001",
         "invoice_date": "01/15/2026",
         "due_date": "01/30/2026",
+        "po_number": "PO-77",
+        "payment_terms": "Net 15",
+        "vendor_name": "Acme Supplies",
+        "vendor_tax_id": "GSTIN-123",
+        "customer_name": "Example Customer",
+        "customer_tax_id": "GSTIN-999",
+        "subtotal": "237.50",
         "total": "250.00",
         "tax": "12.50",
-        "vendor_name": "Acme Supplies",
-        "customer_name": "Example Customer",
         "currency": "USD",
+        "order_items": [
+            {
+                "line_no": "1",
+                "description": "Blue Widgets",
+                "qty": "5",
+                "unit": "pcs",
+                "unit_price": "47.50",
+                "net_amount": "237.50",
+                "tax_rate": "5%",
+                "gross_amount": "250.00",
+            }
+        ],
     }
     predicted = {
         "invoice_number": "INV-1001",
         "invoice_date": "01/15/2026",
         "due_date": None,
+        "po_number": "PO-77",
+        "payment_terms": "Net 15",
+        "vendor_name": "Acme Supplies",
+        "vendor_tax_id": "GSTIN-123",
+        "customer_name": "Example Customer",
+        "customer_tax_id": None,
+        "subtotal": "237.50",
         "total": "250.00",
         "tax": None,
-        "vendor_name": "Acme Supplies",
-        "customer_name": "Example Customer",
         "currency": "USD",
+        "order_items": [
+            {
+                "line_no": "1",
+                "description": "Blue Widgets",
+                "qty": "5",
+                "unit": "pcs",
+                "unit_price": "47.50",
+                "net_amount": "237.50",
+                "tax_rate": None,
+                "gross_amount": "250.00",
+            }
+        ],
         "fallback_reason": "local_regex_fallback",
     }
 
     metrics = compute_field_accuracy(expected, predicted)
 
-    assert metrics["matched_fields"] == 6
-    assert metrics["field_accuracy"] == 0.75
-    assert metrics["missing_fields"] == ["due_date", "tax"]
+    assert metrics["matched_fields"] == 17
+    assert metrics["total_fields"] == 21
+    assert metrics["field_accuracy"] == 0.8095
+    assert metrics["scalar_field_accuracy"] == 0.7692
+    assert metrics["order_item_field_accuracy"] == 0.875
+    assert metrics["missing_fields"] == [
+        "due_date",
+        "customer_tax_id",
+        "tax",
+        "order_items[0].tax_rate",
+    ]
 
 
 def test_trace_writer_redacts_raw_text_by_default(tmp_path: Path):
@@ -59,7 +101,7 @@ def test_trace_writer_redacts_raw_text_by_default(tmp_path: Path):
 def test_load_golden_dataset_reads_fixture():
     repo_root = Path(__file__).resolve().parents[2]
 
-    dataset = load_golden_dataset(repo_root / "data" / "golden" / "invoice_extraction_v1.jsonl")
+    dataset = load_golden_dataset(repo_root / "data" / "golden" / "invoice_extraction_v2.jsonl")
 
     assert len(dataset) == 2
     assert dataset[0]["document_id"] == "golden-invoice-001"
@@ -70,21 +112,33 @@ def test_build_eval_report_includes_versions_and_threshold_status():
         {
             "document_id": "doc-1",
             "source_name": "sample.txt",
-            "metrics": {"field_accuracy": 0.75, "missing_fields": ["tax"]},
+            "metrics": {
+                "field_accuracy": 0.8095,
+                "scalar_field_accuracy": 0.7692,
+                "order_item_field_accuracy": 0.875,
+                "missing_fields": ["tax"],
+            },
         },
         {
             "document_id": "doc-2",
             "source_name": "sample2.txt",
-            "metrics": {"field_accuracy": 1.0, "missing_fields": []},
+            "metrics": {
+                "field_accuracy": 1.0,
+                "scalar_field_accuracy": 1.0,
+                "order_item_field_accuracy": 1.0,
+                "missing_fields": [],
+            },
         },
     ]
 
-    report = build_eval_report(rows, prompt_version="v1", schema_version="v1", min_field_accuracy=0.9)
+    report = build_eval_report(rows, prompt_version="v2", schema_version="v2", min_field_accuracy=0.95)
 
     assert report["documents"] == 2
-    assert report["prompt_version"] == "v1"
-    assert report["schema_version"] == "v1"
-    assert report["average_field_accuracy"] == 0.875
+    assert report["prompt_version"] == "v2"
+    assert report["schema_version"] == "v2"
+    assert report["average_field_accuracy"] == 0.9047
+    assert report["average_scalar_field_accuracy"] == 0.8846
+    assert report["average_order_item_field_accuracy"] == 0.9375
     assert report["meets_threshold"] is False
 
 

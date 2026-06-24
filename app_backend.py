@@ -1,5 +1,10 @@
+import atexit
+import json
 import os
+import subprocess
+import sys
 import tempfile
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,7 +25,33 @@ from llmops.tracing import write_trace_record
 
 
 class Milestone1NotebookAPI:
-    """Backend API adapted from 03_milestone1_easyocr_only notebook logic."""
+    """Backend API adapted from milestone invoice OCR and extraction flows."""
+
+    SCALAR_FIELDS = [
+        "invoice_number",
+        "invoice_date",
+        "due_date",
+        "po_number",
+        "payment_terms",
+        "vendor_name",
+        "vendor_tax_id",
+        "customer_name",
+        "customer_tax_id",
+        "subtotal",
+        "tax",
+        "total",
+        "currency",
+    ]
+    ORDER_ITEM_FIELDS = [
+        "line_no",
+        "description",
+        "qty",
+        "unit",
+        "unit_price",
+        "net_amount",
+        "tax_rate",
+        "gross_amount",
+    ]
 
     def __init__(self, workspace_root: Path):
         self.workspace_root = workspace_root
@@ -61,8 +92,8 @@ class Milestone1NotebookAPI:
         if self.field_extractor_mode not in {"auto", "gpt", "qwen"}:
             self.field_extractor_mode = "auto"
 
-        self.prompt_version = os.getenv("LLMOPS_PROMPT_VERSION", "v1").strip() or "v1"
-        self.schema_version = os.getenv("LLMOPS_SCHEMA_VERSION", "v1").strip() or "v1"
+        self.prompt_version = os.getenv("LLMOPS_PROMPT_VERSION", "v2").strip() or "v2"
+        self.schema_version = os.getenv("LLMOPS_SCHEMA_VERSION", "v2").strip() or "v2"
         self.trace_include_text = os.getenv("LLMOPS_TRACE_TEXT", "false").strip().lower() == "true"
 
         self.prompt_registry = load_prompt_registry(workspace_root)
@@ -77,6 +108,12 @@ class Milestone1NotebookAPI:
         self._qwen_device = "cpu"
         self._qwen_load_error: Optional[str] = None
 
+        self.layout_worker_python = self._resolve_layout_worker_python()
+        self.layout_worker_script = workspace_root / "scripts" / "layout_worker.py"
+        self._layout_proc = None
+        self._layout_lock = threading.Lock()
+        self._layout_error: Optional[str] = None
+
         self.openai_client = None
         if self.openai_api_key:
             http_client = httpx.Client(verify=False)
@@ -85,6 +122,99 @@ class Milestone1NotebookAPI:
                 base_url=self.openai_api_base,
                 http_client=http_client,
             )
+
+    def _resolve_layout_worker_python(self) -> Path:
+        explicit = os.getenv("LAYOUT_WORKER_PYTHON")
+        if explicit:
+            return Path(explicit)
+
+        candidates = [
+            self.workspace_root / ".venv-layout" / "Scripts" / "python.exe",
+            self.workspace_root / ".venv-layout" / "bin" / "python",
+            Path(sys.executable),
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return candidates[0]
+
+    def _ensure_layout_worker(self) -> bool:
+        if self._layout_proc is not None and self._layout_proc.poll() is None:
+            return True
+        if self._layout_error is not None:
+            return False
+        if not self.layout_worker_script.exists():
+            self._layout_error = f"layout_worker_missing: worker={self.layout_worker_script.exists()}"
+            return False
+        if not self.layout_worker_python.exists():
+            self._layout_error = f"layout_worker_missing: python={self.layout_worker_python}"
+            return False
+        try:
+            self._layout_proc = subprocess.Popen(
+                [str(self.layout_worker_python), str(self.layout_worker_script), "--batch"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1,
+            )
+            atexit.register(self._close_layout_worker)
+            return True
+        except Exception as exc:
+            self._layout_error = f"layout_worker_start_failed: {exc}"
+            return False
+
+    def __del__(self):
+        self._close_layout_worker()
+
+    def _close_layout_worker(self) -> None:
+        try:
+            if self._layout_proc is not None and self._layout_proc.poll() is None:
+                if self._layout_proc.stdin:
+                    self._layout_proc.stdin.close()
+                self._layout_proc.terminate()
+                self._layout_proc.wait(timeout=5)
+        except Exception:
+            pass
+
+    def detect_layout_regions(self, image_rgb: np.ndarray) -> Dict[str, Any]:
+        if not self._ensure_layout_worker():
+            return {
+                "status": "layout_worker_unavailable",
+                "regions": [],
+                "note": self._layout_error,
+            }
+
+        fd, tmp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        try:
+            bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(tmp_path, bgr)
+            with self._layout_lock:
+                assert self._layout_proc is not None
+                assert self._layout_proc.stdin is not None
+                assert self._layout_proc.stdout is not None
+                self._layout_proc.stdin.write(tmp_path + "\n")
+                self._layout_proc.stdin.flush()
+                line = self._layout_proc.stdout.readline()
+            if not line:
+                return {"status": "layout_worker_dead", "regions": []}
+            return json.loads(line)
+        except Exception as exc:
+            return {"status": "layout_worker_error", "regions": [], "note": str(exc)}
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+    @staticmethod
+    def _sort_regions_reading_order(regions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        def _key(region: Dict[str, Any]) -> Tuple[int, int]:
+            x1, y1, _, _ = region.get("bbox", [0, 0, 0, 0])
+            return int(y1), int(x1)
+
+        return sorted(regions, key=_key)
 
     def quality_metrics(self, image_rgb: np.ndarray) -> Dict[str, float]:
         gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY)
@@ -123,6 +253,67 @@ class Milestone1NotebookAPI:
         merged_text = "\n".join(texts)
         avg_confidence = float(sum(confidences) / len(confidences)) if confidences else 0.0
         return merged_text, avg_confidence, len(texts)
+
+    def ocr_image_layout_aware(self, image_rgb: np.ndarray) -> Tuple[str, float, int, Dict[str, Any]]:
+        preprocessed = self.preprocess_for_ocr(image_rgb)
+        full_text, full_conf, full_det = self.easyocr_on_image_array(preprocessed)
+
+        layout = self.detect_layout_regions(image_rgb)
+        regions = layout.get("regions", []) if isinstance(layout, dict) else []
+        if not regions:
+            return full_text, full_conf, full_det, {
+                "layout_status": layout.get("status", "unknown") if isinstance(layout, dict) else "unknown",
+                "layout_regions": 0,
+                "layout_crop_chunks": 0,
+            }
+
+        height, width = image_rgb.shape[:2]
+        crop_texts: List[str] = []
+        crop_confs: List[float] = []
+        crop_dets = 0
+
+        ordered = self._sort_regions_reading_order(regions)
+        for index, region in enumerate(ordered[:30], start=1):
+            bbox = region.get("bbox", [])
+            if len(bbox) != 4:
+                continue
+            x1, y1, x2, y2 = [int(value) for value in bbox]
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(width, x2), min(height, y2)
+            if x2 - x1 < 12 or y2 - y1 < 12:
+                continue
+
+            crop = image_rgb[y1:y2, x1:x2]
+            crop_preprocessed = self.preprocess_for_ocr(crop)
+            crop_text, crop_conf, crop_det = self.easyocr_on_image_array(crop_preprocessed)
+            if crop_det <= 0 or not crop_text.strip():
+                continue
+
+            crop_texts.append(f"[REGION {index}]\n{crop_text}")
+            crop_confs.append(crop_conf)
+            crop_dets += crop_det
+
+        if not crop_texts:
+            return full_text, full_conf, full_det, {
+                "layout_status": layout.get("status", "unknown"),
+                "layout_regions": len(regions),
+                "layout_crop_chunks": 0,
+            }
+
+        merged_text = (
+            "=== FULL PAGE OCR ===\n"
+            + full_text
+            + "\n\n=== LAYOUT REGION OCR ===\n"
+            + "\n\n".join(crop_texts)
+        )
+        conf_values = [value for value in [full_conf, *crop_confs] if isinstance(value, (int, float))]
+        merged_conf = round(float(sum(conf_values) / len(conf_values)), 2) if conf_values else full_conf
+        merged_det = int(full_det + crop_dets)
+        return merged_text, merged_conf, merged_det, {
+            "layout_status": layout.get("status", "unknown"),
+            "layout_regions": len(regions),
+            "layout_crop_chunks": len(crop_texts),
+        }
 
     def extract_fields_local(self, text: str) -> Dict[str, Any]:
         return extract_invoice_fields_local(text)
@@ -175,13 +366,11 @@ class Milestone1NotebookAPI:
                     {"role": "user", "content": f"{self.invoice_prompt}\n\nOCR_TEXT:\n{ocr_text}"},
                 ],
                 temperature=0,
-                max_tokens=500,
+                max_tokens=1000,
             )
-
             content = (response.choices[0].message.content or "").strip()
             if self.is_policy_block(content):
                 return self._local_with_reason(ocr_text, "gpt_policy_block_local")
-
             return self._parse_json_or_local(content, ocr_text, "gpt_parse_fallback_local")
         except Exception as exc:
             if self.is_policy_block(str(exc)):
@@ -229,11 +418,7 @@ class Milestone1NotebookAPI:
 
     def extract_fields_qwen(self, ocr_text: str) -> Dict[str, Any]:
         if not self._ensure_qwen_loaded():
-            return self._local_with_reason(
-                ocr_text,
-                "qwen_unavailable_local",
-                self._qwen_load_error,
-            )
+            return self._local_with_reason(ocr_text, "qwen_unavailable_local", self._qwen_load_error)
 
         try:
             import torch
@@ -256,7 +441,7 @@ class Milestone1NotebookAPI:
             with torch.inference_mode():
                 generated_ids = self._qwen_model.generate(
                     **inputs,
-                    max_new_tokens=500,
+                    max_new_tokens=1000,
                     do_sample=False,
                     temperature=0.0,
                 )
@@ -294,10 +479,9 @@ class Milestone1NotebookAPI:
         }
 
     def extract_fields_with_mode(self, ocr_text: str) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
-        mode = self.field_extractor_mode
         started_at = time.perf_counter()
 
-        if mode == "gpt":
+        if self.field_extractor_mode == "gpt":
             fields = self.extract_fields_gpt4omini(ocr_text)
             extraction_mode = "gpt-4o-mini"
             if fields.get("fallback_reason"):
@@ -308,7 +492,7 @@ class Milestone1NotebookAPI:
                 self._build_llmops_metadata("openai", extraction_mode, fields, started_at),
             )
 
-        if mode == "qwen":
+        if self.field_extractor_mode == "qwen":
             fields = self.extract_fields_qwen(ocr_text)
             extraction_mode = "qwen-vl-local"
             if fields.get("fallback_reason"):
@@ -375,6 +559,7 @@ class Milestone1NotebookAPI:
     def ocr_jpg_upload(self, uploaded_file) -> Dict[str, Any]:
         if not self.ocr_available:
             return self._missing_ocr_result()
+
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         if bgr is None:
@@ -382,8 +567,7 @@ class Milestone1NotebookAPI:
 
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         metrics = self.quality_metrics(rgb)
-        preprocessed = self.preprocess_for_ocr(rgb)
-        text, confidence, detections = self.easyocr_on_image_array(preprocessed)
+        text, confidence, detections, layout_meta = self.ocr_image_layout_aware(rgb)
         fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(text)
         self._record_trace(uploaded_file.name, "jpg", text, fields, extraction_mode, llmops_metadata)
 
@@ -396,60 +580,78 @@ class Milestone1NotebookAPI:
             "text": text,
             "fields": fields,
             "extraction_mode": extraction_mode,
+            "layout": layout_meta,
             "llmops": llmops_metadata,
         }
 
     def ocr_pdf_upload(self, uploaded_file) -> Dict[str, Any]:
         if not self.ocr_available:
             return self._missing_ocr_result()
+
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp.write(uploaded_file.read())
             tmp_path = Path(tmp.name)
 
-        doc = pdfium.PdfDocument(str(tmp_path))
-        page_outputs: List[Dict[str, Any]] = []
-        all_text: List[str] = []
-        all_confidences: List[float] = []
+        try:
+            doc = pdfium.PdfDocument(str(tmp_path))
+            page_outputs: List[Dict[str, Any]] = []
+            all_text: List[str] = []
+            all_confidences: List[float] = []
 
-        for index in range(len(doc)):
-            arr = np.array(doc[index].render(scale=2.0).to_pil().convert("RGB"))
-            preprocessed = self.preprocess_for_ocr(arr)
-            text, confidence, detections = self.easyocr_on_image_array(preprocessed)
-            page_outputs.append(
-                {"page": index + 1, "avg_confidence": confidence, "detections": detections}
-            )
-            all_text.append(f"=== PAGE {index + 1} ===\n{text}")
-            if detections > 0:
-                all_confidences.append(confidence)
+            for index in range(len(doc)):
+                arr = np.array(doc[index].render(scale=2.0).to_pil().convert("RGB"))
+                text, confidence, detections, layout_meta = self.ocr_image_layout_aware(arr)
+                page_outputs.append(
+                    {
+                        "page": index + 1,
+                        "avg_confidence": confidence,
+                        "detections": detections,
+                        "layout_status": layout_meta.get("layout_status"),
+                        "layout_regions": layout_meta.get("layout_regions", 0),
+                        "layout_crop_chunks": layout_meta.get("layout_crop_chunks", 0),
+                    }
+                )
+                all_text.append(f"=== PAGE {index + 1} ===\n{text}")
+                if detections > 0:
+                    all_confidences.append(confidence)
 
-        merged = "\n\n".join(all_text)
-        fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(merged)
-        self._record_trace(uploaded_file.name, "pdf", merged, fields, extraction_mode, llmops_metadata)
+            merged = "\n\n".join(all_text)
+            fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(merged)
+            self._record_trace(uploaded_file.name, "pdf", merged, fields, extraction_mode, llmops_metadata)
 
-        return {
-            "status": "success",
-            "type": "pdf",
-            "pages": len(doc),
-            "avg_confidence": (
-                float(sum(all_confidences) / len(all_confidences)) if all_confidences else 0.0
-            ),
-            "page_stats": page_outputs,
-            "text": merged,
-            "fields": fields,
-            "extraction_mode": extraction_mode,
-            "llmops": llmops_metadata,
-        }
+            return {
+                "status": "success",
+                "type": "pdf",
+                "pages": len(doc),
+                "avg_confidence": (
+                    float(sum(all_confidences) / len(all_confidences)) if all_confidences else 0.0
+                ),
+                "page_stats": page_outputs,
+                "layout_summary": {
+                    "regions_total": int(sum(page.get("layout_regions", 0) for page in page_outputs)),
+                    "crop_chunks_total": int(sum(page.get("layout_crop_chunks", 0) for page in page_outputs)),
+                },
+                "text": merged,
+                "fields": fields,
+                "extraction_mode": extraction_mode,
+                "llmops": llmops_metadata,
+            }
+        finally:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def ocr_docx_upload(self, uploaded_file) -> Dict[str, Any]:
         if not self.ocr_available:
             return self._missing_ocr_result()
+
         import io
         import zipfile
 
         import docx
 
         raw = uploaded_file.read()
-
         doc_obj = docx.Document(io.BytesIO(raw))
         native_parts: List[str] = []
         for para in doc_obj.paragraphs:
@@ -479,8 +681,7 @@ class Milestone1NotebookAPI:
                 if arr is None:
                     continue
                 rgb = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
-                preprocessed = self.preprocess_for_ocr(rgb)
-                text, confidence, detections = self.easyocr_on_image_array(preprocessed)
+                text, confidence, detections, layout_meta = self.ocr_image_layout_aware(rgb)
                 image_texts.append(
                     f"=== EMBEDDED IMAGE {index + 1} ({Path(media_name).name}) ===\n{text}"
                 )
@@ -489,6 +690,9 @@ class Milestone1NotebookAPI:
                         "image": Path(media_name).name,
                         "avg_confidence": confidence,
                         "detections": detections,
+                        "layout_status": layout_meta.get("layout_status"),
+                        "layout_regions": layout_meta.get("layout_regions", 0),
+                        "layout_crop_chunks": layout_meta.get("layout_crop_chunks", 0),
                     }
                 )
 
@@ -505,7 +709,7 @@ class Milestone1NotebookAPI:
             "status": "success",
             "type": "docx",
             "native_text_lines": len(native_parts),
-            "embedded_images": len(media_files),
+            "embedded_images": len(image_texts),
             "image_stats": image_stats,
             "text": merged,
             "fields": fields,

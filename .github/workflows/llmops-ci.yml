@@ -41,6 +41,7 @@ jobs:
           uv run python -m py_compile
           app_backend.py
           app_frontend.py
+          app_frontend_helpers.py
           llmops/live_provider.py
           llmops/pipeline.py
           llmops/reporting.py
@@ -50,6 +51,7 @@ jobs:
           llmops/tracing.py
           scripts/run_golden_eval.py
           scripts/run_llmops_pipeline.py
+          scripts/layout_worker.py
 
       - name: Run unit tests
         run: uv run pytest -q
@@ -83,7 +85,7 @@ jobs:
           OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
         run: >
           uv run python scripts/run_llmops_pipeline.py
-          --dataset data/golden/invoice_extraction_v1.jsonl
+          --dataset data/golden/invoice_extraction_v2.jsonl
           --output-dir outputs/llmops
           --model gpt-4o-mini
           --min-field-accuracy 0.80

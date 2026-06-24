@@ -1,15 +1,15 @@
 # LLMOps Pipeline
 
-This project uses a lightweight, offline-first LLMOps workflow for Milestone 1 invoice
+This project uses a lightweight, offline-first LLMOps workflow for Milestone 2 invoice
 understanding. The goal is to keep prompt, schema, fallback, and evaluation behavior
 reviewable without requiring live LLM secrets in CI.
 
 ## Assets
 
 - Prompt registry: `prompts/registry.yaml`
-- Versioned invoice prompt: `prompts/invoices/v1/system.md`
-- Invoice field schema: `schemas/invoice_v1.json`
-- Golden OCR-text examples: `data/golden/invoice_extraction_v1.jsonl`
+- Versioned invoice prompt: `prompts/invoices/v2/system.md`
+- Invoice field schema: `schemas/invoice_v2.json`
+- Golden OCR-text examples: `data/golden/invoice_extraction_v2.jsonl`
 - Eval runner: `scripts/run_golden_eval.py`
 - Live LLMOps runner: `scripts/run_llmops_pipeline.py`
 - Runtime metadata helpers: `llmops/registry.py`, `llmops/schema.py`, `llmops/tracing.py`,
@@ -40,7 +40,7 @@ accuracy, and writes graph/report artifacts.
 
 ```bash
 uv run python scripts/run_llmops_pipeline.py `
-  --dataset data/golden/invoice_extraction_v1.jsonl `
+  --dataset data/golden/invoice_extraction_v2.jsonl `
   --output-dir outputs/llmops `
   --model gpt-4o-mini `
   --min-field-accuracy 0.80
@@ -101,8 +101,9 @@ Successful extraction responses keep the stable public result keys:
 ```
 
 The `llmops` object tracks provider, model, prompt version, schema version, validation
-status, validation errors, fallback reason, and latency. This metadata lets reviewers
-separate model behavior, schema validity, and fallback behavior during debugging.
+status, validation errors, fallback reason, and latency. Live eval rows also track
+`scalar_field_accuracy` and `order_item_field_accuracy` so nested line-item regressions
+do not disappear inside one top-level score.
 
 ## Trace Privacy
 
@@ -121,18 +122,13 @@ Fallback fields may include:
 - `fallback_detail`: optional diagnostic detail, such as schema validation errors or a
   provider exception
 
-These keys are allowed by `schemas/invoice_v1.json` so fallback behavior can be validated
+These keys are allowed by `schemas/invoice_v2.json` so fallback behavior can be validated
 without changing the core invoice field contract.
 
-## Adding Prompt or Schema v2
+## Current Contract Notes
 
-1. Create `prompts/invoices/v2/system.md`.
-2. Add a schema file, for example `schemas/invoice_v2.json`, before changing extraction
-   behavior.
-3. Register both in `prompts/registry.yaml` under `invoices.v2`.
-4. Add or update golden examples in `data/golden/` with reviewed expected fields.
-5. Add focused tests for registry resolution, schema validation, and extraction behavior.
-6. Run the local gates and compare the golden eval report before replacing any baseline
-   outputs.
-7. Set `LLMOPS_PROMPT_VERSION=v2` and `LLMOPS_SCHEMA_VERSION=v2` only after tests and evals
-   prove the contract is ready.
+- `order_items` is scored per row and per field using flattened paths such as
+  `order_items[0].description`.
+- Offline and live reports now emit overall field accuracy plus scalar-only and line-item-only accuracy.
+- Default local contract is `v2`; set `LLMOPS_PROMPT_VERSION` and `LLMOPS_SCHEMA_VERSION`
+  explicitly only when testing another registered version.

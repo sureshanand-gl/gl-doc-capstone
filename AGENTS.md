@@ -2,10 +2,11 @@
 
 ## Project Structure & Module Organization
 
-This repository contains a Milestone 1 invoice understanding Streamlit app.
+This repository contains a Milestone 2 invoice understanding Streamlit app.
 
-- `app_backend.py`: OCR, preprocessing, provider routing, GPT/Qwen/local fallback, and field extraction.
-- `app_frontend.py`: Streamlit upload UI and result display. Keep workflow logic in backend.
+- `app_backend.py`: OCR, layout-worker integration, provider routing, GPT/Qwen/local fallback, and field extraction.
+- `app_frontend.py`: Streamlit upload UI, layout preview, and RAG chat. Keep workflow logic in backend or helpers.
+- `app_frontend_helpers.py`: layout preview loaders/rendering and lightweight RAG helpers.
 - `pyproject.toml` and `uv.lock`: Python dependency metadata and lockfile managed by uv.
 - `prompts/`, `schemas/`, `data/golden/`, `scripts/`: thin LLMOps assets for prompt contracts, golden evals, and offline validation.
 - `Datasets/`: sample invoices, PDFs, images, CSV labels, and DOCX examples. Treat as input data.
@@ -37,7 +38,7 @@ If LLMOps tooling is added, follow reference command intent: `ruff` for lint/for
 
 ## Coding Style & Naming Conventions
 
-Use Python 3.11+, 4-space indentation, snake_case functions and variables, and PascalCase classes such as `Milestone1NotebookAPI`. Keep output contracts stable: `status`, `type`, `text`, `fields`, `extraction_mode`, and fallback metadata. New prompts and schemas must be versioned and reviewed together.
+Use Python 3.11+, 4-space indentation, snake_case functions and variables, and PascalCase classes such as `Milestone1NotebookAPI`. Keep output contracts stable: `status`, `type`, `text`, `fields`, `extraction_mode`, and fallback metadata. Layout metadata, page stats, and `llmops` metadata may be extended. New prompts and schemas must be versioned and reviewed together.
 
 ## LLMOps Workflow
 
@@ -45,7 +46,7 @@ Prefer contract-first changes. Define expected fields in schemas before changing
 
 ## Testing Guidelines
 
-No formal test suite exists yet. For every change, run `py_compile` and manually test at least one image or PDF through Streamlit. For backend extraction changes, add focused tests under `tests/unit/` or `tests/integration/`, and compare against golden examples before updating `outputs/`.
+Run `py_compile`, `pytest`, and the golden eval for every extraction-contract change. Manually test at least one image or PDF through Streamlit. For backend extraction changes, add focused tests under `tests/unit/` or `tests/integration/`, and compare against golden examples before updating `outputs/`.
 
 ## Commit & Pull Request Guidelines
 
@@ -53,4 +54,4 @@ No Git history is available in this checkout. Use concise imperative commit mess
 
 ## Security & Configuration Tips
 
-Do not commit `.env`, API keys, private model weights, or sensitive invoice data. `.env` may define `OPENAI_API_KEY`, `OPENAI_API_BASE`, and `FIELD_EXTRACTOR_MODE=auto|gpt|qwen`. Keep `pyproject.toml` and `uv.lock` synchronized with imports and document any optional local model dependency.
+Do not commit `.env`, API keys, private model weights, or sensitive invoice data. `.env` may define `OPENAI_API_KEY`, `OPENAI_API_BASE`, `FIELD_EXTRACTOR_MODE=auto|gpt|qwen`, `LLMOPS_PROMPT_VERSION`, `LLMOPS_SCHEMA_VERSION`, and optional `LAYOUT_WORKER_PYTHON`. Keep `pyproject.toml` and `uv.lock` synchronized with imports and document any optional local model dependency.

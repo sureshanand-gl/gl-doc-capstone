@@ -1,21 +1,27 @@
 {
   "documents": 2,
-  "prompt_version": "v1",
-  "schema_version": "v1",
+  "prompt_version": "v2",
+  "schema_version": "v2",
   "minimum_field_accuracy": 0.8,
   "average_field_accuracy": 1.0,
+  "average_scalar_field_accuracy": 1.0,
+  "average_order_item_field_accuracy": 1.0,
   "meets_threshold": true,
   "results": [
     {
       "document_id": "golden-invoice-001",
       "source_name": "sample_invoice_text_001.txt",
       "field_accuracy": 1.0,
+      "scalar_field_accuracy": 1.0,
+      "order_item_field_accuracy": 1.0,
       "missing_fields": []
     },
     {
       "document_id": "golden-invoice-002",
       "source_name": "sample_invoice_text_002.txt",
       "field_accuracy": 1.0,
+      "scalar_field_accuracy": 1.0,
+      "order_item_field_accuracy": 1.0,
       "missing_fields": []
     }
   ]

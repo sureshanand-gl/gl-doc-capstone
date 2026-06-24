@@ -5,7 +5,7 @@
   <title>Live LLMOps Evaluation Report</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 32px; color: #1f2933; }
-    .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }
     .card { border: 1px solid #d8dee4; border-radius: 6px; padding: 14px; }
     .metric { font-size: 28px; font-weight: 700; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
@@ -19,8 +19,10 @@
   <h1>Live LLMOps Evaluation Report</h1>
   <div class="cards">
     <div class="card"><div>Documents</div><div class="metric">2</div></div>
-    <div class="card"><div>Average Accuracy</div><div class="metric">93.75%</div></div>
-    <div class="card"><div>Average Latency</div><div class="metric">2823.53 ms</div></div>
+    <div class="card"><div>Average Accuracy</div><div class="metric">92.86%</div></div>
+    <div class="card"><div>Scalar Accuracy</div><div class="metric">88.46%</div></div>
+    <div class="card"><div>Line Item Accuracy</div><div class="metric">100.00%</div></div>
+    <div class="card"><div>Average Latency</div><div class="metric">5144.28 ms</div></div>
     <div class="card"><div>Meets Threshold</div><div class="metric">True</div></div>
   </div>
   <h2>Charts</h2>
@@ -31,12 +33,12 @@
     <thead>
       <tr>
         <th>Document</th><th>Source</th><th>Provider</th><th>Model</th>
-        <th>Accuracy</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
+        <th>Accuracy</th><th>Scalar</th><th>Line Items</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
         <th>Missing Fields</th>
       </tr>
     </thead>
-    <tbody><tr><td>golden-invoice-001</td><td>sample_invoice_text_001.txt</td><td>openai</td><td>gpt-4o-mini</td><td>100.00%</td><td>3554.45</td><td>valid</td><td></td><td></td></tr>
-<tr><td>golden-invoice-002</td><td>sample_invoice_text_002.txt</td><td>openai</td><td>gpt-4o-mini</td><td>87.50%</td><td>2092.61</td><td>valid</td><td></td><td>currency</td></tr></tbody>
+    <tbody><tr><td>golden-invoice-001</td><td>sample_invoice_text_001.txt</td><td>openai</td><td>gpt-4o-mini</td><td>90.48%</td><td>84.62%</td><td>100.00%</td><td>5153.09</td><td>valid</td><td></td><td>invoice_date, due_date</td></tr>
+<tr><td>golden-invoice-002</td><td>sample_invoice_text_002.txt</td><td>openai</td><td>gpt-4o-mini</td><td>95.24%</td><td>92.31%</td><td>100.00%</td><td>5135.47</td><td>valid</td><td></td><td>currency</td></tr></tbody>
   </table>
   <h2>Fallbacks and Errors</h2>
   <ul><li>No validation or provider errors recorded.</li></ul>

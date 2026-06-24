@@ -24,7 +24,7 @@ def parse_args() -> ArgumentParser:
 
 def main() -> int:
     args = parse_args().parse_args()
-    dataset_path = REPO_ROOT / "data" / "golden" / "invoice_extraction_v1.jsonl"
+    dataset_path = REPO_ROOT / "data" / "golden" / "invoice_extraction_v2.jsonl"
     report_path = args.output_path
 
     dataset = load_golden_dataset(dataset_path)
@@ -43,8 +43,8 @@ def main() -> int:
 
     report = build_eval_report(
         rows,
-        prompt_version="v1",
-        schema_version="v1",
+        prompt_version="v2",
+        schema_version="v2",
         min_field_accuracy=args.min_field_accuracy,
     )
 

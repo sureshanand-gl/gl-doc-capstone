@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InvoiceFieldsV2",
+  "type": "object",
+  "required": [
+    "invoice_number",
+    "invoice_date",
+    "due_date",
+    "po_number",
+    "payment_terms",
+    "vendor_name",
+    "vendor_tax_id",
+    "customer_name",
+    "customer_tax_id",
+    "subtotal",
+    "tax",
+    "total",
+    "currency",
+    "order_items"
+  ],
+  "properties": {
+    "invoice_number": { "type": ["string", "null"] },
+    "invoice_date": { "type": ["string", "null"] },
+    "due_date": { "type": ["string", "null"] },
+    "po_number": { "type": ["string", "null"] },
+    "payment_terms": { "type": ["string", "null"] },
+    "vendor_name": { "type": ["string", "null"] },
+    "vendor_tax_id": { "type": ["string", "null"] },
+    "customer_name": { "type": ["string", "null"] },
+    "customer_tax_id": { "type": ["string", "null"] },
+    "subtotal": { "type": ["string", "null"] },
+    "tax": { "type": ["string", "null"] },
+    "total": { "type": ["string", "null"] },
+    "currency": { "type": ["string", "null"] },
+    "order_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "line_no",
+          "description",
+          "qty",
+          "unit",
+          "unit_price",
+          "net_amount",
+          "tax_rate",
+          "gross_amount"
+        ],
+        "properties": {
+          "line_no": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "qty": { "type": ["string", "null"] },
+          "unit": { "type": ["string", "null"] },
+          "unit_price": { "type": ["string", "null"] },
+          "net_amount": { "type": ["string", "null"] },
+          "tax_rate": { "type": ["string", "null"] },
+          "gross_amount": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "fallback_reason": { "type": ["string", "null"] },
+    "fallback_detail": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

@@ -15,7 +15,7 @@ def validate_invoice_fields(
 ) -> list[str]:
     if schema_path is None:
         repo_root = Path(__file__).resolve().parents[1]
-        schema_path = repo_root / "schemas" / "invoice_v1.json"
+        schema_path = repo_root / "schemas" / "invoice_v2.json"
 
     validator = Draft202012Validator(_load_schema(schema_path))
     return [error.message for error in validator.iter_errors(fields)]

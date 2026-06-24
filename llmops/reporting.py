@@ -45,6 +45,14 @@ def build_live_eval_report(
         "schema_version": schema_version,
         "minimum_field_accuracy": min_field_accuracy,
         "average_field_accuracy": average_accuracy,
+        "average_scalar_field_accuracy": round(
+            mean(row["scalar_field_accuracy"] for row in rows),
+            4,
+        ) if rows else 0.0,
+        "average_order_item_field_accuracy": round(
+            mean(row["order_item_field_accuracy"] for row in rows),
+            4,
+        ) if rows else 0.0,
         "average_latency_ms": _average_latency(rows),
         "meets_threshold": average_accuracy >= min_field_accuracy,
         "invalid_documents": sum(1 for row in rows if row["validation_status"] != "valid"),
@@ -92,6 +100,8 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
         f"<td>{html.escape(row['provider'])}</td>"
         f"<td>{html.escape(row['model'])}</td>"
         f"<td>{row['field_accuracy']:.2%}</td>"
+        f"<td>{row['scalar_field_accuracy']:.2%}</td>"
+        f"<td>{row['order_item_field_accuracy']:.2%}</td>"
         f"<td>{row['latency_ms']:.2f}</td>"
         f"<td>{html.escape(row['validation_status'])}</td>"
         f"<td>{_render_status(row.get('fallback_reason'))}</td>"
@@ -116,7 +126,7 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
   <title>Live LLMOps Evaluation Report</title>
   <style>
     body {{ font-family: Arial, sans-serif; margin: 32px; color: #1f2933; }}
-    .cards {{ display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 12px; }}
+    .cards {{ display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }}
     .card {{ border: 1px solid #d8dee4; border-radius: 6px; padding: 14px; }}
     .metric {{ font-size: 28px; font-weight: 700; }}
     table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
@@ -131,6 +141,8 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
   <div class="cards">
     <div class="card"><div>Documents</div><div class="metric">{report['documents']}</div></div>
     <div class="card"><div>Average Accuracy</div><div class="metric">{report['average_field_accuracy']:.2%}</div></div>
+    <div class="card"><div>Scalar Accuracy</div><div class="metric">{report['average_scalar_field_accuracy']:.2%}</div></div>
+    <div class="card"><div>Line Item Accuracy</div><div class="metric">{report['average_order_item_field_accuracy']:.2%}</div></div>
     <div class="card"><div>Average Latency</div><div class="metric">{report['average_latency_ms']:.2f} ms</div></div>
     <div class="card"><div>Meets Threshold</div><div class="metric">{report['meets_threshold']}</div></div>
   </div>
@@ -142,7 +154,7 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
     <thead>
       <tr>
         <th>Document</th><th>Source</th><th>Provider</th><th>Model</th>
-        <th>Accuracy</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
+        <th>Accuracy</th><th>Scalar</th><th>Line Items</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
         <th>Missing Fields</th>
       </tr>
     </thead>
