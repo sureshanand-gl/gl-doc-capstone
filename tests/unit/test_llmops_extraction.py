@@ -21,6 +21,36 @@ def test_invalid_llm_json_uses_local_fallback():
     assert fields["fallback_reason"] == "gpt_parse_fallback_local"
 
 
+def test_model_json_normalizes_numeric_order_item_values_to_strings():
+    ocr_text = "Invoice Number: INV-1001"
+
+    fields = parse_model_json_or_fallback(
+        content=(
+            '{"invoice_number":"INV-1001","invoice_date":"2026-01-15","due_date":"2026-01-30",'
+            '"po_number":"PO-77","payment_terms":"Net 15","vendor_name":"Acme Supplies",'
+            '"vendor_tax_id":"GSTIN-123","customer_name":"Example Customer","customer_tax_id":"GSTIN-999",'
+            '"subtotal":"237.50","tax":"12.50","total":"250.00","currency":"USD",'
+            '"order_items":[{"line_no":1,"description":"Blue Widgets","qty":5,"unit":"pcs",'
+            '"unit_price":"47.50","net_amount":"237.50","tax_rate":"5%","gross_amount":"250.00"}]}'
+        ),
+        ocr_text=ocr_text,
+        fallback_reason="gpt_parse_fallback_local",
+    )
+
+    assert fields["order_items"] == [
+        {
+            "line_no": "1",
+            "description": "Blue Widgets",
+            "qty": "5",
+            "unit": "pcs",
+            "unit_price": "47.50",
+            "net_amount": "237.50",
+            "tax_rate": "5%",
+            "gross_amount": "250.00",
+        }
+    ]
+
+
 def test_local_baseline_extracts_invoice_v2_fields_and_order_items():
     ocr_text = (
         "Vendor: Acme Supplies\n"

@@ -63,9 +63,9 @@ def test_openai_compatible_extractor_returns_valid_fields():
                 "currency": "USD",
                 "order_items": [
                     {
-                        "line_no": "1",
+                        "line_no": 1,
                         "description": "Blue Widgets",
-                        "qty": "5",
+                        "qty": 5,
                         "unit": "pcs",
                         "unit_price": "47.50",
                         "net_amount": "237.50",
@@ -88,6 +88,8 @@ def test_openai_compatible_extractor_returns_valid_fields():
     assert result.provider == "openai"
     assert result.model == "gpt-4o-mini"
     assert result.fields["invoice_number"] == "INV-1001"
+    assert result.fields["order_items"][0]["line_no"] == "1"
+    assert result.fields["order_items"][0]["qty"] == "5"
     assert result.validation_status == "valid"
     assert result.validation_errors == []
     assert result.fallback_reason is None

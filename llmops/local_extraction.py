@@ -107,6 +107,12 @@ def empty_invoice_fields() -> dict[str, Any]:
     return fields
 
 
+def _coerce_model_value(value: Any) -> Any:
+    if value is None:
+        return None
+    return str(value)
+
+
 def _extract_order_items(text: str) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for line in text.splitlines():
@@ -123,7 +129,7 @@ def normalize_invoice_fields(parsed: dict[str, Any] | None) -> dict[str, Any]:
         return fields
 
     for key in SCALAR_FIELD_KEYS:
-        fields[key] = parsed.get(key)
+        fields[key] = _coerce_model_value(parsed.get(key))
 
     normalized_items: list[dict[str, Any]] = []
     raw_items = parsed.get("order_items")
@@ -131,7 +137,9 @@ def normalize_invoice_fields(parsed: dict[str, Any] | None) -> dict[str, Any]:
         for raw_item in raw_items:
             if not isinstance(raw_item, dict):
                 continue
-            normalized_items.append({key: raw_item.get(key) for key in ORDER_ITEM_FIELD_KEYS})
+            normalized_items.append(
+                {key: _coerce_model_value(raw_item.get(key)) for key in ORDER_ITEM_FIELD_KEYS}
+            )
     fields["order_items"] = normalized_items
 
     if "fallback_reason" in parsed:
