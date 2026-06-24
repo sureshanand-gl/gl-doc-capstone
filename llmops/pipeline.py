@@ -10,17 +10,14 @@ def _zero_accuracy_metrics(
     expected_fields: dict[str, Any],
     predicted_fields: dict[str, Any],
 ) -> dict[str, Any]:
-    missing_fields = [
-        key
-        for key, expected_value in expected_fields.items()
-        if expected_value is not None and predicted_fields.get(key) != expected_value
-    ]
-    return {
-        "matched_fields": 0,
-        "total_fields": len(expected_fields),
-        "field_accuracy": 0.0,
-        "missing_fields": missing_fields,
-    }
+    metrics = compute_field_accuracy(expected_fields, predicted_fields)
+    metrics["matched_fields"] = 0
+    metrics["scalar_matched_fields"] = 0
+    metrics["order_item_matched_fields"] = 0
+    metrics["field_accuracy"] = 0.0
+    metrics["scalar_field_accuracy"] = 0.0
+    metrics["order_item_field_accuracy"] = 0.0
+    return metrics
 
 
 def build_live_eval_row(
@@ -45,6 +42,8 @@ def build_live_eval_row(
         "validation_status": provider_result.validation_status,
         "validation_errors": provider_result.validation_errors,
         "field_accuracy": metrics["field_accuracy"],
+        "scalar_field_accuracy": metrics["scalar_field_accuracy"],
+        "order_item_field_accuracy": metrics["order_item_field_accuracy"],
         "matched_fields": metrics["matched_fields"],
         "total_fields": metrics["total_fields"],
         "missing_fields": metrics["missing_fields"],

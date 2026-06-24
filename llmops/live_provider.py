@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 from openai import OpenAI
 
-from llmops.local_extraction import INVOICE_FIELD_KEYS
+from llmops.local_extraction import normalize_invoice_fields
 from llmops.schema import validate_invoice_fields
 
 
@@ -53,7 +53,7 @@ class OpenAICompatibleExtractor:
 
     @staticmethod
     def _empty_fields(fallback_reason: str, fallback_detail: str) -> dict[str, Any]:
-        fields = {key: None for key in INVOICE_FIELD_KEYS}
+        fields = normalize_invoice_fields({})
         fields["fallback_reason"] = fallback_reason
         fields["fallback_detail"] = fallback_detail
         return fields
@@ -110,7 +110,7 @@ class OpenAICompatibleExtractor:
                     {"role": "user", "content": f"{self.prompt}\n\nOCR_TEXT:\n{ocr_text}"},
                 ],
                 temperature=0,
-                max_tokens=500,
+                max_tokens=1000,
             )
             content = (response.choices[0].message.content or "").strip()
         except Exception as exc:
@@ -138,7 +138,7 @@ class OpenAICompatibleExtractor:
                 raw_response=content,
             )
 
-        fields = {key: parsed.get(key) for key in INVOICE_FIELD_KEYS}
+        fields = normalize_invoice_fields(parsed)
         validation_errors = validate_invoice_fields(fields, self.schema_path)
         validation_status = "valid" if not validation_errors else "invalid"
         fallback_reason = None

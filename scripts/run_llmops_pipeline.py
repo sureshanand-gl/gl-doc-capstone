@@ -21,7 +21,7 @@ def parse_args() -> ArgumentParser:
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=REPO_ROOT / "data" / "golden" / "invoice_extraction_v1.jsonl",
+        default=REPO_ROOT / "data" / "golden" / "invoice_extraction_v2.jsonl",
     )
     parser.add_argument(
         "--output-dir",
@@ -29,7 +29,7 @@ def parse_args() -> ArgumentParser:
         default=REPO_ROOT / "outputs" / "llmops",
     )
     parser.add_argument("--model", default="gpt-4o-mini")
-    parser.add_argument("--prompt-version", default=os.getenv("LLMOPS_PROMPT_VERSION", "v1"))
+    parser.add_argument("--prompt-version", default=os.getenv("LLMOPS_PROMPT_VERSION", "v2"))
     parser.add_argument("--min-field-accuracy", type=float, default=0.80)
     parser.add_argument("--no-dotenv", action="store_true")
     return parser
