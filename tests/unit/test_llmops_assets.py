@@ -63,3 +63,33 @@ def test_schema_accepts_invoice_v2_fields_order_items_and_fallback_metadata():
     errors = validate_invoice_fields(fields, repo_root / "schemas" / "invoice_v2.json")
 
     assert errors == []
+
+
+def test_schema_default_path_uses_invoice_v2_contract():
+    fields = {
+        "invoice_number": "INV-1001",
+        "invoice_date": "01/15/2026",
+        "due_date": None,
+        "po_number": "PO-77",
+        "payment_terms": "Net 15",
+        "vendor_name": "Acme Supplies",
+        "vendor_tax_id": "GSTIN-123",
+        "customer_name": None,
+        "customer_tax_id": None,
+        "subtotal": "237.50",
+        "total": "250.00",
+        "tax": "12.50",
+        "currency": "USD",
+        "order_items": [],
+    }
+
+    assert validate_invoice_fields(fields) == []
+
+
+def test_ci_workflow_uses_v2_dataset_and_compiles_new_pipeline_files():
+    repo_root = Path(__file__).resolve().parents[2]
+    workflow = (repo_root / ".github" / "workflows" / "llmops-ci.yml").read_text(encoding="utf-8")
+
+    assert "data/golden/invoice_extraction_v2.jsonl" in workflow
+    assert "app_frontend_helpers.py" in workflow
+    assert "scripts/layout_worker.py" in workflow
