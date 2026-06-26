@@ -1,0 +1,74 @@
+services:
+  app:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      FIELD_EXTRACTOR_MODE: ${FIELD_EXTRACTOR_MODE:-auto}
+      LLMOPS_PROMPT_VERSION: ${LLMOPS_PROMPT_VERSION:-v2}
+      LLMOPS_SCHEMA_VERSION: ${LLMOPS_SCHEMA_VERSION:-v2}
+      LLMOPS_TRACE_TEXT: ${LLMOPS_TRACE_TEXT:-false}
+      LLMOPS_PRICING_FILE: /app/configs/model_pricing.yaml
+      PROMETHEUS_METRICS_PORT: 9108
+      PROMETHEUS_PUSHGATEWAY_URL: http://pushgateway:9091
+      EASYOCR_MODEL_DIR: /models/easyocr
+      QWEN_MODEL_DIR: /models/qwen
+      LAYOUT_WORKER_PYTHON: /app/.venv/bin/python
+    ports:
+      - "8501:8501"
+      - "9108:9108"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./models/easyocr:/models/easyocr
+      - ./models/qwen:/models/qwen
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      - app
+      - pushgateway
+
+  pushgateway:
+    image: prom/pushgateway:v1.8.0
+    ports:
+      - "9091:9091"
+
+  grafana:
+    image: grafana/grafana-oss:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:

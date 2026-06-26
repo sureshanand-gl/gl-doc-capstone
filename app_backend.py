@@ -21,6 +21,7 @@ from openai import OpenAI
 from llmops.local_extraction import extract_invoice_fields_local, parse_model_json_or_fallback
 from llmops.registry import load_prompt_registry
 from llmops.schema import validate_invoice_fields
+from llmops.telemetry import calculate_usage_cost, get_default_telemetry, normalize_usage
 from llmops.tracing import write_trace_record
 
 
@@ -60,7 +61,7 @@ class Milestone1NotebookAPI:
         self.output_dir.mkdir(exist_ok=True)
         self.trace_path = self.output_dir / "llmops_traces.jsonl"
 
-        self.easyocr_model_dir = workspace_root
+        self.easyocr_model_dir = self._resolve_env_path("EASYOCR_MODEL_DIR", workspace_root)
         self.craft_model_path = self.easyocr_model_dir / "craft_mlt_25k.pth"
         self.english_model_path = self.easyocr_model_dir / "english_g2.pth"
         self.ocr_available = self.craft_model_path.exists() and self.english_model_path.exists()
@@ -100,8 +101,16 @@ class Milestone1NotebookAPI:
         self.invoice_prompt_entry = self.prompt_registry.get_invoice_entry(self.prompt_version)
         self.invoice_prompt = self.invoice_prompt_entry.prompt_path.read_text(encoding="utf-8")
         self.invoice_schema_path = self.invoice_prompt_entry.schema_path
+        self.pricing_path = self._resolve_env_path(
+            "LLMOPS_PRICING_FILE",
+            workspace_root / "configs" / "model_pricing.yaml",
+        )
+        self.telemetry = get_default_telemetry(self.pricing_path)
 
-        self.qwen_model_dir = workspace_root / "qwen3-vl-8b-instruct"
+        self.qwen_model_dir = self._resolve_env_path(
+            "QWEN_MODEL_DIR",
+            workspace_root / "qwen3-vl-8b-instruct",
+        )
         self.qwen_model_name = "Qwen3-VL-8B-Instruct (local)"
         self._qwen_model = None
         self._qwen_processor = None
@@ -122,6 +131,17 @@ class Milestone1NotebookAPI:
                 base_url=self.openai_api_base,
                 http_client=http_client,
             )
+
+        metrics_port = (os.getenv("PROMETHEUS_METRICS_PORT") or "").strip()
+        if metrics_port:
+            self.telemetry.start_server(int(metrics_port))
+
+    def _resolve_env_path(self, env_name: str, default_path: Path) -> Path:
+        configured = (os.getenv(env_name) or "").strip()
+        if not configured:
+            return default_path
+        candidate = Path(configured)
+        return candidate if candidate.is_absolute() else self.workspace_root / candidate
 
     def _resolve_layout_worker_python(self) -> Path:
         explicit = os.getenv("LAYOUT_WORKER_PYTHON")
@@ -354,9 +374,21 @@ class Milestone1NotebookAPI:
         lowered = message.lower()
         return any(marker in lowered for marker in markers)
 
-    def extract_fields_gpt4omini(self, ocr_text: str) -> Dict[str, Any]:
+    def _usage_details_from_response(
+        self,
+        model_name: str,
+        response: Any | None,
+    ) -> tuple[dict[str, int] | None, float | None, str]:
+        usage = normalize_usage(getattr(response, "usage", None) if response is not None else None)
+        cost_usd = calculate_usage_cost(model_name, usage, self.telemetry.pricing)
+        return usage, cost_usd, "provider" if usage is not None else "unavailable"
+
+    def extract_fields_gpt4omini(
+        self,
+        ocr_text: str,
+    ) -> Tuple[Dict[str, Any], dict[str, int] | None, float | None, str]:
         if self.openai_client is None:
-            return self._local_with_reason(ocr_text, "gpt_unavailable_local")
+            return self._local_with_reason(ocr_text, "gpt_unavailable_local"), None, None, "unavailable"
 
         try:
             response = self.openai_client.chat.completions.create(
@@ -369,13 +401,24 @@ class Milestone1NotebookAPI:
                 max_tokens=1000,
             )
             content = (response.choices[0].message.content or "").strip()
+            usage, cost_usd, usage_source = self._usage_details_from_response(self.model_name, response)
             if self.is_policy_block(content):
-                return self._local_with_reason(ocr_text, "gpt_policy_block_local")
-            return self._parse_json_or_local(content, ocr_text, "gpt_parse_fallback_local")
+                return (
+                    self._local_with_reason(ocr_text, "gpt_policy_block_local"),
+                    usage,
+                    cost_usd,
+                    usage_source,
+                )
+            return (
+                self._parse_json_or_local(content, ocr_text, "gpt_parse_fallback_local"),
+                usage,
+                cost_usd,
+                usage_source,
+            )
         except Exception as exc:
             if self.is_policy_block(str(exc)):
-                return self._local_with_reason(ocr_text, "gpt_policy_block_local")
-            return self._local_with_reason(ocr_text, "gpt_error_local", str(exc))
+                return self._local_with_reason(ocr_text, "gpt_policy_block_local"), None, None, "unavailable"
+            return self._local_with_reason(ocr_text, "gpt_error_local", str(exc)), None, None, "unavailable"
 
     def _ensure_qwen_loaded(self) -> bool:
         if self._qwen_model is not None and self._qwen_processor is not None:
@@ -465,6 +508,10 @@ class Milestone1NotebookAPI:
         model_name: str,
         fields: Dict[str, Any],
         started_at: float,
+        usage: dict[str, int] | None,
+        cost_usd: float | None,
+        usage_source: str,
+        surface: str,
     ) -> Dict[str, Any]:
         validation_errors = validate_invoice_fields(fields, self.invoice_schema_path)
         return {
@@ -476,20 +523,43 @@ class Milestone1NotebookAPI:
             "validation_errors": validation_errors,
             "fallback_reason": fields.get("fallback_reason"),
             "latency_ms": round((time.perf_counter() - started_at) * 1000, 2),
+            "prompt_tokens": usage["prompt_tokens"] if usage is not None else None,
+            "completion_tokens": usage["completion_tokens"] if usage is not None else None,
+            "total_tokens": usage["total_tokens"] if usage is not None else None,
+            "cost_usd": cost_usd,
+            "usage_source": usage_source,
+            "surface": surface,
         }
+
+    @staticmethod
+    def _status_from_metadata(llmops_metadata: Dict[str, Any]) -> str:
+        if llmops_metadata.get("fallback_reason"):
+            return "fallback"
+        if llmops_metadata.get("validation_status") != "valid":
+            return "invalid"
+        return "valid"
 
     def extract_fields_with_mode(self, ocr_text: str) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
         started_at = time.perf_counter()
 
         if self.field_extractor_mode == "gpt":
-            fields = self.extract_fields_gpt4omini(ocr_text)
+            fields, usage, cost_usd, usage_source = self.extract_fields_gpt4omini(ocr_text)
             extraction_mode = "gpt-4o-mini"
             if fields.get("fallback_reason"):
                 extraction_mode = "local_fallback_after_gpt"
             return (
                 fields,
                 extraction_mode,
-                self._build_llmops_metadata("openai", extraction_mode, fields, started_at),
+                self._build_llmops_metadata(
+                    "openai",
+                    extraction_mode,
+                    fields,
+                    started_at,
+                    usage,
+                    cost_usd,
+                    usage_source,
+                    "streamlit_app",
+                ),
             )
 
         if self.field_extractor_mode == "qwen":
@@ -500,16 +570,34 @@ class Milestone1NotebookAPI:
             return (
                 fields,
                 extraction_mode,
-                self._build_llmops_metadata("qwen", extraction_mode, fields, started_at),
+                self._build_llmops_metadata(
+                    "qwen",
+                    extraction_mode,
+                    fields,
+                    started_at,
+                    None,
+                    None,
+                    "unavailable",
+                    "streamlit_app",
+                ),
             )
 
         if self.openai_client is not None:
-            gpt_fields = self.extract_fields_gpt4omini(ocr_text)
+            gpt_fields, usage, cost_usd, usage_source = self.extract_fields_gpt4omini(ocr_text)
             if not gpt_fields.get("fallback_reason"):
                 return (
                     gpt_fields,
                     "gpt-4o-mini",
-                    self._build_llmops_metadata("openai", "gpt-4o-mini", gpt_fields, started_at),
+                    self._build_llmops_metadata(
+                        "openai",
+                        "gpt-4o-mini",
+                        gpt_fields,
+                        started_at,
+                        usage,
+                        cost_usd,
+                        usage_source,
+                        "streamlit_app",
+                    ),
                 )
 
         qwen_fields = self.extract_fields_qwen(ocr_text)
@@ -517,13 +605,31 @@ class Milestone1NotebookAPI:
             return (
                 qwen_fields,
                 "qwen-vl-local",
-                self._build_llmops_metadata("qwen", "qwen-vl-local", qwen_fields, started_at),
+                self._build_llmops_metadata(
+                    "qwen",
+                    "qwen-vl-local",
+                    qwen_fields,
+                    started_at,
+                    None,
+                    None,
+                    "unavailable",
+                    "streamlit_app",
+                ),
             )
 
         return (
             qwen_fields,
             "local_fallback",
-            self._build_llmops_metadata("local", "local_fallback", qwen_fields, started_at),
+            self._build_llmops_metadata(
+                "local",
+                "local_fallback",
+                qwen_fields,
+                started_at,
+                None,
+                None,
+                "unavailable",
+                "streamlit_app",
+            ),
         )
 
     def _record_trace(
@@ -549,6 +655,24 @@ class Milestone1NotebookAPI:
             },
         )
 
+    def _record_request_metrics(
+        self,
+        document_type: str,
+        llmops_metadata: Dict[str, Any],
+    ) -> None:
+        self.telemetry.record_request(
+            surface=str(llmops_metadata.get("surface", "streamlit_app")),
+            provider=str(llmops_metadata.get("provider", "unknown")),
+            model=str(llmops_metadata.get("model", "unknown")),
+            status=self._status_from_metadata(llmops_metadata),
+            document_type=document_type,
+            latency_ms=float(llmops_metadata.get("latency_ms", 0.0)),
+            prompt_tokens=llmops_metadata.get("prompt_tokens"),
+            completion_tokens=llmops_metadata.get("completion_tokens"),
+            total_tokens=llmops_metadata.get("total_tokens"),
+            cost_usd=llmops_metadata.get("cost_usd"),
+        )
+
     def _missing_ocr_result(self) -> Dict[str, Any]:
         return {
             "status": "error",
@@ -570,6 +694,7 @@ class Milestone1NotebookAPI:
         text, confidence, detections, layout_meta = self.ocr_image_layout_aware(rgb)
         fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(text)
         self._record_trace(uploaded_file.name, "jpg", text, fields, extraction_mode, llmops_metadata)
+        self._record_request_metrics("jpg", llmops_metadata)
 
         return {
             "status": "success",
@@ -618,6 +743,7 @@ class Milestone1NotebookAPI:
             merged = "\n\n".join(all_text)
             fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(merged)
             self._record_trace(uploaded_file.name, "pdf", merged, fields, extraction_mode, llmops_metadata)
+            self._record_request_metrics("pdf", llmops_metadata)
 
             return {
                 "status": "success",
@@ -704,6 +830,7 @@ class Milestone1NotebookAPI:
 
         fields, extraction_mode, llmops_metadata = self.extract_fields_with_mode(merged)
         self._record_trace(uploaded_file.name, "docx", merged, fields, extraction_mode, llmops_metadata)
+        self._record_request_metrics("docx", llmops_metadata)
 
         return {
             "status": "success",

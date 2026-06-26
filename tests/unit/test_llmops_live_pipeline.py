@@ -20,28 +20,30 @@ class _FakeChoice:
 
 
 class _FakeResponse:
-    def __init__(self, content: str):
+    def __init__(self, content: str, usage=None):
         self.choices = [_FakeChoice(content)]
+        self.usage = usage
 
 
 class _FakeCompletions:
-    def __init__(self, content: str):
+    def __init__(self, content: str, usage=None):
         self.content = content
+        self.usage = usage
         self.calls = []
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
-        return _FakeResponse(self.content)
+        return _FakeResponse(self.content, usage=self.usage)
 
 
 class _FakeChat:
-    def __init__(self, content: str):
-        self.completions = _FakeCompletions(content)
+    def __init__(self, content: str, usage=None):
+        self.completions = _FakeCompletions(content, usage=usage)
 
 
 class _FakeClient:
-    def __init__(self, content: str):
-        self.chat = _FakeChat(content)
+    def __init__(self, content: str, usage=None):
+        self.chat = _FakeChat(content, usage=usage)
 
 
 def test_openai_compatible_extractor_returns_valid_fields():
@@ -74,7 +76,8 @@ def test_openai_compatible_extractor_returns_valid_fields():
                     }
                 ],
             }
-        )
+        ),
+        usage={"prompt_tokens": 400, "completion_tokens": 100, "total_tokens": 500},
     )
     extractor = OpenAICompatibleExtractor(
         client=client,
@@ -93,6 +96,9 @@ def test_openai_compatible_extractor_returns_valid_fields():
     assert result.validation_status == "valid"
     assert result.validation_errors == []
     assert result.fallback_reason is None
+    assert result.usage == {"prompt_tokens": 400, "completion_tokens": 100, "total_tokens": 500}
+    assert result.cost_usd == 0.00012
+    assert result.usage_source == "provider"
     assert client.chat.completions.calls[0]["temperature"] == 0
 
 
@@ -128,6 +134,9 @@ def test_openai_compatible_extractor_records_parse_failure_without_local_fallbac
     }
     assert result.fallback_reason == "llm_parse_error"
     assert result.validation_errors == ["LLM response was not valid JSON."]
+    assert result.usage is None
+    assert result.cost_usd is None
+    assert result.usage_source == "unavailable"
 
 
 def test_build_live_eval_row_scores_parse_failure_as_zero_accuracy():
@@ -181,6 +190,12 @@ def test_build_live_eval_row_scores_parse_failure_as_zero_accuracy():
     assert row["order_item_field_accuracy"] == 0.0
     assert row["validation_status"] == "invalid"
     assert row["fallback_reason"] == "llm_parse_error"
+    assert row["surface"] == "live_pipeline"
+    assert row["prompt_tokens"] is None
+    assert row["completion_tokens"] is None
+    assert row["total_tokens"] is None
+    assert row["cost_usd"] is None
+    assert row["usage_source"] == "unavailable"
     assert row["missing_fields"] == [
         "invoice_number",
         "po_number",
@@ -208,6 +223,7 @@ def test_write_llmops_artifacts_creates_json_html_charts_and_dag(tmp_path: Path)
             "source_name": "sample.txt",
             "provider": "openai",
             "model": "gpt-4o-mini",
+            "surface": "live_pipeline",
             "prompt_version": "v2",
             "schema_version": "v2",
             "latency_ms": 120.5,
@@ -215,6 +231,11 @@ def test_write_llmops_artifacts_creates_json_html_charts_and_dag(tmp_path: Path)
             "field_accuracy": 1.0,
             "scalar_field_accuracy": 1.0,
             "order_item_field_accuracy": 1.0,
+            "prompt_tokens": 400,
+            "completion_tokens": 100,
+            "total_tokens": 500,
+            "cost_usd": 0.00012,
+            "usage_source": "provider",
             "missing_fields": [],
             "fallback_reason": None,
             "validation_errors": [],
@@ -230,6 +251,10 @@ def test_write_llmops_artifacts_creates_json_html_charts_and_dag(tmp_path: Path)
     )
 
     assert report["meets_threshold"] is True
+    assert report["total_prompt_tokens"] == 400
+    assert report["total_completion_tokens"] == 100
+    assert report["total_tokens"] == 500
+    assert report["total_cost_usd"] == 0.00012
     assert (tmp_path / "live_eval_report.json").exists()
     assert (tmp_path / "live_eval_report.html").read_text(encoding="utf-8").startswith("<!doctype html>")
     assert (tmp_path / "field_accuracy_chart.png").stat().st_size > 0

@@ -53,6 +53,40 @@ def test_layout_worker_resolution_prefers_explicit_env_override(monkeypatch):
     assert str(api.layout_worker_python) == r"C:\layout\python.exe"
 
 
+def test_model_path_resolution_prefers_env_overrides(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[2]
+    monkeypatch.setenv("EASYOCR_MODEL_DIR", r"C:\models\easyocr")
+    monkeypatch.setenv("QWEN_MODEL_DIR", r"C:\models\qwen")
+
+    api = Milestone1NotebookAPI(repo_root)
+
+    assert str(api.easyocr_model_dir) == r"C:\models\easyocr"
+    assert str(api.qwen_model_dir) == r"C:\models\qwen"
+
+
+def test_build_llmops_metadata_includes_usage_fields(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[2]
+    api = Milestone1NotebookAPI(repo_root)
+
+    metadata = api._build_llmops_metadata(
+        provider="openai",
+        model_name="gpt-4o-mini",
+        fields={"invoice_number": None, "order_items": []},
+        started_at=0.0,
+        usage={"prompt_tokens": 50, "completion_tokens": 10, "total_tokens": 60},
+        cost_usd=0.0000135,
+        usage_source="provider",
+        surface="streamlit_app",
+    )
+
+    assert metadata["prompt_tokens"] == 50
+    assert metadata["completion_tokens"] == 10
+    assert metadata["total_tokens"] == 60
+    assert metadata["cost_usd"] == 0.0000135
+    assert metadata["usage_source"] == "provider"
+    assert metadata["surface"] == "streamlit_app"
+
+
 def test_layout_aware_ocr_merges_region_text_and_summary(monkeypatch):
     repo_root = Path(__file__).resolve().parents[2]
     api = Milestone1NotebookAPI(repo_root)

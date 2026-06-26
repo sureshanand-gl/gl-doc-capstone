@@ -61,6 +61,12 @@ FIELD_EXTRACTOR_MODE=auto
 LLMOPS_PROMPT_VERSION=v2
 LLMOPS_SCHEMA_VERSION=v2
 LLMOPS_TRACE_TEXT=false
+PROMETHEUS_METRICS_PORT=9108
+PROMETHEUS_PUSHGATEWAY_URL=http://localhost:9091
+LLMOPS_PRICING_FILE=configs/model_pricing.yaml
+EASYOCR_MODEL_DIR=
+QWEN_MODEL_DIR=
+GRAFANA_ADMIN_PASSWORD=admin
 LAYOUT_WORKER_PYTHON=
 ```
 
@@ -68,6 +74,10 @@ Notes:
 - `OPENAI_API_KEY` is required for GPT extraction.
 - If GPT endpoint is blocked by corporate DLP/Zscaler, the app falls back automatically to local extraction.
 - Set `LLMOPS_PROMPT_VERSION=v2` and `LLMOPS_SCHEMA_VERSION=v2` for Milestone 2 contract.
+- `PROMETHEUS_METRICS_PORT` exposes `/metrics` from app process when set.
+- `PROMETHEUS_PUSHGATEWAY_URL` lets `scripts/run_llmops_pipeline.py` publish per-run rollups for Grafana.
+- `LLMOPS_PRICING_FILE` defaults to `configs/model_pricing.yaml` and seeds `gpt-4o-mini` token pricing.
+- `EASYOCR_MODEL_DIR` and `QWEN_MODEL_DIR` let Docker mounts override repo-root model lookup.
 - `LAYOUT_WORKER_PYTHON` is optional. If unset, backend tries `.venv-layout`, then current Python runtime.
 
 ## 3. Run the App
@@ -103,7 +113,38 @@ uv run python scripts/run_llmops_pipeline.py --dataset data/golden/invoice_extra
 This writes `outputs/llmops/live_eval_report.json`, `live_eval_report.html`,
 field accuracy and latency PNG charts, and `pipeline_dag.mmd`. `OPENAI_API_KEY` is
 required. `OPENAI_API_BASE` is optional and defaults to the configured OpenAI-compatible
-endpoint.
+endpoint. When provider response includes token usage, report now also includes
+prompt/completion/total tokens plus computed USD cost from `configs/model_pricing.yaml`.
+
+## 4A. Docker Observability Stack
+
+Build and start full app + Prometheus + Pushgateway + Grafana stack:
+
+```bash
+docker compose up --build
+```
+
+Useful endpoints:
+- Streamlit app: `http://localhost:8501`
+- Prometheus: `http://localhost:9090`
+- Pushgateway: `http://localhost:9091`
+- Grafana: `http://localhost:3000`
+
+Grafana credentials:
+- user: `admin`
+- password: `GRAFANA_ADMIN_PASSWORD` from `.env` or compose environment
+
+Container notes:
+- App exports Prometheus metrics on `PROMETHEUS_METRICS_PORT` and Prometheus scrapes `/metrics`.
+- Compose mounts `./outputs`, `./models/easyocr`, and `./models/qwen` into container.
+- Put `craft_mlt_25k.pth` and `english_g2.pth` inside `models/easyocr/` for Docker runs.
+- Run live pipeline inside stack with:
+
+```bash
+docker compose run --rm app uv run python scripts/run_llmops_pipeline.py --dataset data/golden/invoice_extraction_v2.jsonl --output-dir outputs/llmops --model gpt-4o-mini --min-field-accuracy 0.80
+```
+
+This pushes summary gauges to Pushgateway when `PROMETHEUS_PUSHGATEWAY_URL` is set.
 
 For the full local and GitHub Actions LLMOps workflow, see `docs/llmops.md`.
 

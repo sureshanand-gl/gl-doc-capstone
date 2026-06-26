@@ -50,6 +50,8 @@ Required environment:
 
 - `OPENAI_API_KEY`
 - `OPENAI_API_BASE` optional; defaults to `https://aibe.mygreatlearning.com/openai/v1`
+- `PROMETHEUS_PUSHGATEWAY_URL` optional; when set, pipeline publishes per-run summary gauges
+- `LLMOPS_PRICING_FILE` optional; defaults to `configs/model_pricing.yaml`
 
 The CLI loads `.env` by default for local runs. Use `--no-dotenv` when you want to
 validate only process-level environment variables, such as CI secret checks.
@@ -63,8 +65,51 @@ Artifacts:
 - `outputs/llmops/pipeline_dag.mmd`
 - `outputs/llmops/pipeline_dag.png` when Mermaid CLI (`mmdc`) is installed
 
+Report payloads now include:
+
+- `prompt_tokens`
+- `completion_tokens`
+- `total_tokens`
+- `cost_usd`
+- `usage_source`
+- aggregate token/cost totals in `live_eval_report.json`
+
 Malformed LLM JSON and schema-invalid responses are recorded as invalid live model
 results. The live evaluator does not score local regex fallback as live model success.
+
+## Docker + Monitoring
+
+`docker-compose.yml` runs four services:
+
+- `app`: Streamlit runtime plus in-process Prometheus exporter
+- `prometheus`: scrapes `app:9108/metrics` and Pushgateway
+- `pushgateway`: receives batch pipeline summary gauges
+- `grafana`: pre-provisioned Prometheus datasource and LLMOps cost dashboard
+
+Start stack:
+
+```bash
+docker compose up --build
+```
+
+Ports:
+
+- app `8501`
+- Prometheus `9090`
+- Pushgateway `9091`
+- Grafana `3000`
+
+Compose sets:
+
+- `PROMETHEUS_METRICS_PORT=9108`
+- `PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091`
+- `LLMOPS_PRICING_FILE=/app/configs/model_pricing.yaml`
+- `EASYOCR_MODEL_DIR=/models/easyocr`
+- `QWEN_MODEL_DIR=/models/qwen`
+
+Billing note: cost metrics are only populated when provider response includes token
+usage. Local fallback and Qwen requests remain visible in request/latency metrics but
+stay non-billable with `usage_source="unavailable"`.
 
 ## GitHub Actions
 
@@ -101,9 +146,9 @@ Successful extraction responses keep the stable public result keys:
 ```
 
 The `llmops` object tracks provider, model, prompt version, schema version, validation
-status, validation errors, fallback reason, and latency. Live eval rows also track
-`scalar_field_accuracy` and `order_item_field_accuracy` so nested line-item regressions
-do not disappear inside one top-level score.
+status, validation errors, fallback reason, latency, token usage, computed cost, and
+surface. Live eval rows also track `scalar_field_accuracy` and `order_item_field_accuracy`
+so nested line-item regressions do not disappear inside one top-level score.
 
 ## Trace Privacy
 

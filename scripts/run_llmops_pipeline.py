@@ -12,6 +12,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from llmops.pipeline import run_live_golden_eval  # noqa: E402
 from llmops.reporting import write_llmops_artifacts  # noqa: E402
+from llmops.telemetry import publish_pipeline_summary  # noqa: E402
 
 DEFAULT_OPENAI_API_BASE = "https://aibe.mygreatlearning.com/openai/v1"
 
@@ -73,6 +74,9 @@ def main() -> int:
         prompt_version=args.prompt_version,
         schema_version=schema_version,
     )
+    pushgateway_url = (os.getenv("PROMETHEUS_PUSHGATEWAY_URL") or "").strip()
+    if pushgateway_url:
+        publish_pipeline_summary(pushgateway_url=pushgateway_url, report=report)
 
     print(json.dumps(report, indent=2))
     return 0 if report["meets_threshold"] else 1

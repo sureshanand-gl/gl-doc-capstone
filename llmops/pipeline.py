@@ -36,6 +36,7 @@ def build_live_eval_row(
         "source_name": dataset_row["source_name"],
         "provider": provider_result.provider,
         "model": provider_result.model,
+        "surface": "live_pipeline",
         "prompt_version": prompt_version,
         "schema_version": schema_version,
         "latency_ms": provider_result.latency_ms,
@@ -48,6 +49,17 @@ def build_live_eval_row(
         "total_fields": metrics["total_fields"],
         "missing_fields": metrics["missing_fields"],
         "fallback_reason": provider_result.fallback_reason,
+        "prompt_tokens": (
+            provider_result.usage["prompt_tokens"] if provider_result.usage is not None else None
+        ),
+        "completion_tokens": (
+            provider_result.usage["completion_tokens"] if provider_result.usage is not None else None
+        ),
+        "total_tokens": (
+            provider_result.usage["total_tokens"] if provider_result.usage is not None else None
+        ),
+        "cost_usd": provider_result.cost_usd,
+        "usage_source": provider_result.usage_source,
         "fields": provider_result.fields,
     }
 
@@ -69,6 +81,7 @@ def run_live_golden_eval(
         model=model,
         prompt=prompt,
         schema_path=prompt_entry.schema_path,
+        pricing_path=repo_root / "configs" / "model_pricing.yaml",
     )
 
     rows = []
