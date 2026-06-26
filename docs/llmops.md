@@ -55,6 +55,8 @@ Required environment:
 
 The CLI loads `.env` by default for local runs. Use `--no-dotenv` when you want to
 validate only process-level environment variables, such as CI secret checks.
+For local setup, copy `.env.example` to `.env`. Repository validation should not depend on
+`.env` being present.
 
 Artifacts:
 
@@ -110,6 +112,8 @@ Compose sets:
 Billing note: cost metrics are only populated when provider response includes token
 usage. Local fallback and Qwen requests remain visible in request/latency metrics but
 stay non-billable with `usage_source="unavailable"`.
+`docker compose config` should work even when `.env` is absent because service env
+variables have compose-level defaults and no required `env_file` reference remains.
 
 ## GitHub Actions
 

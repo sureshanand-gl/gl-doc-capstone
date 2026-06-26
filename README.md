@@ -52,7 +52,7 @@ For local Qwen mode, install the optional heavy model dependencies:
 uv sync --extra qwen
 ```
 
-Create a `.env` file in this folder:
+Copy `.env.example` to `.env` for local secrets and overrides:
 
 ```env
 OPENAI_API_KEY=your_key_here
@@ -79,6 +79,7 @@ Notes:
 - `LLMOPS_PRICING_FILE` defaults to `configs/model_pricing.yaml` and seeds `gpt-4o-mini` token pricing.
 - `EASYOCR_MODEL_DIR` and `QWEN_MODEL_DIR` let Docker mounts override repo-root model lookup.
 - `LAYOUT_WORKER_PYTHON` is optional. If unset, backend tries `.venv-layout`, then current Python runtime.
+- `.env` is optional for `docker compose config` and default stack validation. Compose uses built-in defaults plus shell env when `.env` is absent.
 
 ## 3. Run the App
 
@@ -132,7 +133,7 @@ Useful endpoints:
 
 Grafana credentials:
 - user: `admin`
-- password: `GRAFANA_ADMIN_PASSWORD` from `.env` or compose environment
+- password: `GRAFANA_ADMIN_PASSWORD` from `.env`, `.env.example`, or compose environment
 
 Container notes:
 - App exports Prometheus metrics on `PROMETHEUS_METRICS_PORT` and Prometheus scrapes `/metrics`.
