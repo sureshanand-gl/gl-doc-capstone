@@ -5,7 +5,7 @@ PROJECT="${PROJECT:-}"
 REGION="us-central1"
 SERVICE="gl-doc-capstone"
 REPO="gl-doc-capstone"
-TAG="latest"
+TAG="${TAG:-}"
 ENV_FILE=".env"
 ALLOW_UNAUTHENTICATED="true"
 MIN_INSTANCES="1"
@@ -356,7 +356,11 @@ build_and_push_images() {
 
   local i
   for ((i = 0; i < ${#images[@]}; i++)); do
-    docker build --platform "$IMAGE_PLATFORM" --build-arg "${build_args[$i]}" -t "${images[$i]}" -f "${dockerfiles[$i]}" .
+    local build_options=(--platform "$IMAGE_PLATFORM" --build-arg "${build_args[$i]}")
+    if [[ "${dockerfiles[$i]}" == "docker/cloudrun/proxy/Dockerfile" ]]; then
+      build_options+=(--no-cache)
+    fi
+    docker build "${build_options[@]}" -t "${images[$i]}" -f "${dockerfiles[$i]}" .
     docker push "${images[$i]}"
   done
 }
@@ -379,6 +383,10 @@ if [[ "$DRY_RUN" != "true" ]]; then
 fi
 
 validate_inputs
+
+if [[ -z "$TAG" ]]; then
+  TAG="deploy-$(date -u +%Y%m%d%H%M%S)"
+fi
 
 IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}"
 APP_IMAGE="${IMAGE_BASE}/gl-doc-capstone-app:${TAG}"

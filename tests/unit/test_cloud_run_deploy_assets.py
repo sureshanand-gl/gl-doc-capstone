@@ -50,10 +50,11 @@ def test_deploy_scripts_build_cloud_run_images_for_amd64_linux():
 
     assert 'IMAGE_PLATFORM="${IMAGE_PLATFORM:-linux/amd64}"' in bash_text
     assert "--image-platform" in bash_text
-    assert "docker build --platform \"$IMAGE_PLATFORM\"" in bash_text
+    assert '--platform "$IMAGE_PLATFORM"' in bash_text
 
     assert '[string]$ImagePlatform = "linux/amd64"' in ps_text
-    assert "& docker build --platform $ImagePlatform" in ps_text
+    assert '"--platform", $ImagePlatform' in ps_text
+    assert "& docker @buildArgs" in ps_text
 
 
 def test_deploy_scripts_make_infra_and_secret_sync_opt_in():
@@ -104,8 +105,10 @@ def test_cloud_run_dockerfiles_allow_base_image_overrides():
         assert f"{build_arg}=" in bash_text
         assert f"{build_arg}=" in ps_text
 
-    assert 'docker build --platform "$IMAGE_PLATFORM" --build-arg' in bash_text
-    assert "docker build --platform $ImagePlatform --build-arg" in ps_text
+    assert '--platform "$IMAGE_PLATFORM"' in bash_text
+    assert '--build-arg "${build_args[$i]}"' in bash_text
+    assert '"--platform", $ImagePlatform' in ps_text
+    assert '"--build-arg", $buildArg' in ps_text
 
 
 def test_proxy_routes_streamlit_and_protects_observability_paths():
@@ -126,6 +129,29 @@ def test_proxy_routes_streamlit_and_protects_observability_paths():
     assert "auth_basic_user_file /etc/nginx/.htpasswd" in proxy_text
     assert "Upgrade $http_upgrade" in proxy_text
     assert "htpasswd -bc" in entrypoint_text
+
+
+def test_proxy_entrypoint_is_lf_only_and_image_build_normalizes_line_endings():
+    proxy_dockerfile = REPO_ROOT / "docker" / "cloudrun" / "proxy" / "Dockerfile"
+    entrypoint = REPO_ROOT / "docker" / "cloudrun" / "proxy" / "entrypoint.sh"
+
+    assert b"\r" not in entrypoint.read_bytes()
+    proxy_dockerfile_text = proxy_dockerfile.read_text(encoding="utf-8")
+    assert "sed -i 's/\\r$//' /cloudrun-entrypoint.sh" in proxy_dockerfile_text
+    assert 'ENTRYPOINT ["/bin/sh", "/cloudrun-entrypoint.sh"]' in proxy_dockerfile_text
+
+
+def test_deploy_scripts_force_fresh_cloud_run_proxy_revision_by_default():
+    bash_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.sh").read_text(encoding="utf-8")
+    ps_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.ps1").read_text(encoding="utf-8")
+
+    assert 'TAG="${TAG:-}"' in bash_text
+    assert 'TAG="deploy-$(date -u +%Y%m%d%H%M%S)"' in bash_text
+    assert "--no-cache" in bash_text
+
+    assert '[string]$Tag = ""' in ps_text
+    assert '$Tag = "deploy-{0}" -f (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmss")' in ps_text
+    assert "--no-cache" in ps_text
 
 
 def test_deploy_scripts_have_matching_flags_secret_sync_and_validation():

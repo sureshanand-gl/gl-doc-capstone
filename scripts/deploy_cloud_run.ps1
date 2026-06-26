@@ -3,7 +3,7 @@ param(
     [string]$Region = "us-central1",
     [string]$Service = "gl-doc-capstone",
     [string]$Repo = "gl-doc-capstone",
-    [string]$Tag = "latest",
+    [string]$Tag = "",
     [string]$EnvFile = ".env",
     [bool]$AllowUnauthenticated = $true,
     [int]$MinInstances = 1,
@@ -260,17 +260,22 @@ function Invoke-LocalDockerBuilds {
     }
 
     $builds = @(
-        @{ Image = $AppImage; Dockerfile = "Dockerfile"; BuildArg = "PYTHON_BASE_IMAGE=$PythonBaseImage" },
-        @{ Image = $ProxyImage; Dockerfile = "docker/cloudrun/proxy/Dockerfile"; BuildArg = "PROXY_BASE_IMAGE=$ProxyBaseImage" },
-        @{ Image = $PrometheusImage; Dockerfile = "docker/cloudrun/prometheus/Dockerfile"; BuildArg = "PROMETHEUS_BASE_IMAGE=$PrometheusBaseImage" },
-        @{ Image = $GrafanaImage; Dockerfile = "docker/cloudrun/grafana/Dockerfile"; BuildArg = "GRAFANA_BASE_IMAGE=$GrafanaBaseImage" }
+        @{ Image = $AppImage; Dockerfile = "Dockerfile"; BuildArg = "PYTHON_BASE_IMAGE=$PythonBaseImage"; NoCache = $false },
+        @{ Image = $ProxyImage; Dockerfile = "docker/cloudrun/proxy/Dockerfile"; BuildArg = "PROXY_BASE_IMAGE=$ProxyBaseImage"; NoCache = $true },
+        @{ Image = $PrometheusImage; Dockerfile = "docker/cloudrun/prometheus/Dockerfile"; BuildArg = "PROMETHEUS_BASE_IMAGE=$PrometheusBaseImage"; NoCache = $false },
+        @{ Image = $GrafanaImage; Dockerfile = "docker/cloudrun/grafana/Dockerfile"; BuildArg = "GRAFANA_BASE_IMAGE=$GrafanaBaseImage"; NoCache = $false }
     )
 
     foreach ($build in $builds) {
         $image = $build["Image"]
         $dockerfile = $build["Dockerfile"]
         $buildArg = $build["BuildArg"]
-        & docker build --platform $ImagePlatform --build-arg $buildArg -t $image -f $dockerfile .
+        $buildArgs = @("build", "--platform", $ImagePlatform, "--build-arg", $buildArg)
+        if ($build["NoCache"]) {
+            $buildArgs += "--no-cache"
+        }
+        $buildArgs += @("-t", $image, "-f", $dockerfile, ".")
+        & docker @buildArgs
         if ($LASTEXITCODE -ne 0) {
             throw "docker build failed for $image"
         }
@@ -299,6 +304,10 @@ if (-not $DryRun) {
 }
 
 Assert-Inputs $EnvValues
+
+if ([string]::IsNullOrWhiteSpace($Tag)) {
+    $Tag = "deploy-{0}" -f (Get-Date).ToUniversalTime().ToString("yyyyMMddHHmmss")
+}
 
 $ImageBase = "$Region-docker.pkg.dev/$Project/$Repo"
 $AppImage = "$ImageBase/gl-doc-capstone-app:$Tag"
