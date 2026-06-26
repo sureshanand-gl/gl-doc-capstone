@@ -30,4 +30,4 @@ RUN mkdir -p /app/outputs /models/easyocr /models/qwen
 
 EXPOSE 8501 9108
 
-CMD ["uv", "run", "streamlit", "run", "app_frontend.py", "--server.headless", "true", "--server.port", "8501", "--server.address", "0.0.0.0"]
+CMD ["uv", "run", "--no-sync", "streamlit", "run", "app_frontend.py", "--server.headless", "true", "--server.port", "8501", "--server.address", "0.0.0.0"]

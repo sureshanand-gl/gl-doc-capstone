@@ -222,6 +222,7 @@ function Write-ServiceYaml {
     [void]$builder.AppendLine("    metadata:")
     [void]$builder.AppendLine("      annotations:")
     [void]$builder.AppendLine("        autoscaling.knative.dev/minScale: `"$MinInstances`"")
+    [void]$builder.AppendLine("        run.googleapis.com/cpu-throttling: `"false`"")
     [void]$builder.AppendLine("    spec:")
     [void]$builder.AppendLine("      serviceAccountName: $ServiceAccountEmail")
     [void]$builder.AppendLine("      containers:")

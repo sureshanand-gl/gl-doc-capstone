@@ -1,0 +1,147 @@
+{"kind":"deck","id":"pr/edaqbx","name":"Deck"}
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/2x4nap4r","slide":1,"title":"MILESTONE 2 INVOICE APP","textShapes":23}
+{"kind":"textbox","id":"sh/nap4r65w","slide":1,"name":"kicker","text":"MILESTONE 2 INVOICE APP","textPreview":"MILESTONE 2 INVOICE APP","textChars":23,"textLines":1,"bbox":[44,34,320,22]}
+{"kind":"textbox","id":"sh/cvixczed","slide":1,"name":"title","text":"LLMOps upgrade overview","textPreview":"LLMOps upgrade overview","textChars":23,"textLines":1,"bbox":[44,58,900,48]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":1,"name":"subtitle","text":"Milestone 2 added contract, measurement, and CI enforcement around invoice extraction.","textPreview":"Milestone 2 added contract, measurement, and CI enforcement around invoice extraction.","textChars":86,"textLines":1,"bbox":[44,112,860,28]}
+{"kind":"shape","id":"sh/udg7adsj","slide":1,"name":"top-rule","bbox":[44,152,1190,1]}
+{"kind":"shape","id":"sh/nyd0z610","slide":1,"name":"chart-panel","bbox":[44,178,578,474]}
+{"kind":"shape","id":"sh/cj6tovah","slide":1,"name":"chart-frame","bbox":[68,202,530,292]}
+{"kind":"textbox","id":"sh/u9knih4b","slide":1,"name":"chart-caption","text":"Current live run meets threshold with 0 invalid documents and 0 fallback documents.","textPreview":"Current live run meets threshold with 0 invalid documents and 0 fallback documents.","textChars":83,"textLines":1,"bbox":[68,512,530,46]}
+{"kind":"shape","id":"sh/judg7ads","slide":1,"name":"metric-top-rule","bbox":[68,574,530,1]}
+{"kind":"shape","id":"sh/nyd0z610","slide":1,"name":"metric-rule-1","bbox":[244,590,1,48]}
+{"kind":"shape","id":"sh/udg7adsj","slide":1,"name":"metric-rule-2","bbox":[412,590,1,48]}
+{"kind":"textbox","id":"sh/54zidony","slide":1,"name":"metric-accuracy-value","text":"v2","textPreview":"v2","textChars":2,"textLines":1,"bbox":[68,586,150,38]}
+{"kind":"textbox","id":"sh/cj6tovah","slide":1,"name":"metric-accuracy-label","text":"Prompt/schema","textPreview":"Prompt/schema","textChars":13,"textLines":1,"bbox":[68,622,150,20]}
+{"kind":"textbox","id":"sh/nap4r65w","slide":1,"name":"metric-latency-value","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[264,586,120,38]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":1,"name":"metric-latency-label","text":"Change areas","textPreview":"Change areas","textChars":12,"textLines":1,"bbox":[264,622,120,20]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":1,"name":"metric-tests-value","text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[430,586,150,38]}
+{"kind":"textbox","id":"sh/cvixczed","slide":1,"name":"metric-tests-label","text":"LLMOps tests","textPreview":"LLMOps tests","textChars":12,"textLines":1,"bbox":[430,622,150,20]}
+{"kind":"textbox","id":"sh/jm1cfa9w","slide":1,"name":"index-01","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[660,184,52,24]}
+{"kind":"textbox","id":"sh/u18jqh0f","slide":1,"name":"heading-01","text":"Versioned contract","textPreview":"Versioned contract","textChars":18,"textLines":1,"bbox":[715,182,500,30]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":1,"name":"body-01","text":"Prompt registry, invoice_v2 schema, and golden dataset now define extraction behavior and scoring.","textPreview":"Prompt registry, invoice_v2 schema, and golden dataset now define extraction behavior and scoring.","textChars":98,"textLines":1,"bbox":[715,214,500,48]}
+{"kind":"shape","id":"sh/rqd4vmtw","slide":1,"name":"rule-01","bbox":[715,272,500,1]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":1,"name":"index-02","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[660,278,52,24]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":1,"name":"heading-02","text":"Live pipeline","textPreview":"Live pipeline","textChars":13,"textLines":1,"bbox":[715,276,500,30]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":1,"name":"body-02","text":"OpenAI-compatible runner writes JSON, HTML, PNG, and DAG artifacts from golden OCR examples.","textPreview":"OpenAI-compatible runner writes JSON, HTML, PNG, and DAG artifacts from golden OCR examples.","textChars":92,"textLines":1,"bbox":[715,308,500,48]}
+{"kind":"shape","id":"sh/re1w7mp0","slide":1,"name":"rule-02","bbox":[715,366,500,1]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":1,"name":"index-03","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[660,372,52,24]}
+{"kind":"textbox","id":"sh/9knih4by","slide":1,"name":"heading-03","text":"Runtime metadata","textPreview":"Runtime metadata","textChars":16,"textLines":1,"bbox":[715,370,500,30]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":1,"name":"body-03","text":"Backend records prompt version, schema version, fallback reason, latency, and usage-cost details.","textPreview":"Backend records prompt version, schema version, fallback reason, latency, and usage-cost details.","textChars":97,"textLines":1,"bbox":[715,402,500,48]}
+{"kind":"shape","id":"sh/ra5gbq1o","slide":1,"name":"rule-03","bbox":[715,460,500,1]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":1,"name":"index-04","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[660,466,52,24]}
+{"kind":"textbox","id":"sh/87ed8bat","slide":1,"name":"heading-04","text":"CI enforcement","textPreview":"CI enforcement","textChars":14,"textLines":1,"bbox":[715,464,500,30]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":1,"name":"body-04","text":"GitHub Actions uploads offline and live reports, and missing live secret now fails gate loudly.","textPreview":"GitHub Actions uploads offline and live reports, and missing live secret now fails gate loudly.","textChars":95,"textLines":1,"bbox":[715,496,500,48]}
+{"kind":"shape","id":"sh/q1orytsv","slide":1,"name":"rule-04","bbox":[715,554,500,1]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":1,"name":"sources","text":"Sources: README.md, docs/llmops.md, outputs/llmops/live_eval_report.json, .github/workflows/llmops-ci.yml","textPreview":"Sources: README.md, docs/llmops.md, outputs/llmops/live_eval_report.json, .github/workflows/llmops-ci.yml","textChars":105,"textLines":1,"bbox":[44,684,1190,18]}
+{"kind":"image","id":"im/3m94fu18","slide":1,"name":"","alt":"LLMOps upgrade overview","bbox":[78,220.5,510,255]}
+{"kind":"notes","id":"nt/2x4nap4r","slide":1,"text":""}
+{"kind":"slide","id":"sl/pg3ex0nu","slide":2,"title":"MILESTONE 2 INVOICE APP","textShapes":23}
+{"kind":"textbox","id":"sh/yxobm58z","slide":2,"name":"kicker","text":"MILESTONE 2 INVOICE APP","textPreview":"MILESTONE 2 INVOICE APP","textChars":23,"textLines":1,"bbox":[44,34,320,22]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":2,"name":"title","text":"Pipeline and code changes","textPreview":"Pipeline and code changes","textChars":25,"textLines":1,"bbox":[44,58,900,48]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":2,"name":"subtitle","text":"LLMOps moved from thin helpers to reusable modules around provider calls, reporting, and telemetry.","textPreview":"LLMOps moved from thin helpers to reusable modules around provider calls, reporting, and telemetry.","textChars":99,"textLines":1,"bbox":[44,112,860,28]}
+{"kind":"shape","id":"sh/r65wjudg","slide":2,"name":"top-rule","bbox":[44,152,1190,1]}
+{"kind":"shape","id":"sh/ylc7u54z","slide":2,"name":"chart-panel","bbox":[44,178,578,474]}
+{"kind":"shape","id":"sh/9cvixcze","slide":2,"name":"chart-frame","bbox":[68,202,530,292]}
+{"kind":"textbox","id":"sh/rytsvu9k","slide":2,"name":"chart-caption","text":"Live pipeline now exposes per-document provider timing instead of opaque provider calls.","textPreview":"Live pipeline now exposes per-document provider timing instead of opaque provider calls.","textChars":88,"textLines":1,"bbox":[68,512,530,46]}
+{"kind":"shape","id":"sh/yd0z6103","slide":2,"name":"metric-top-rule","bbox":[68,574,530,1]}
+{"kind":"shape","id":"sh/wb2hwfyx","slide":2,"name":"metric-rule-1","bbox":[244,590,1,48]}
+{"kind":"shape","id":"sh/lwval87e","slide":2,"name":"metric-rule-2","bbox":[412,590,1,48]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":2,"name":"metric-accuracy-value","text":"7","textPreview":"7","textChars":1,"textLines":1,"bbox":[68,586,150,38]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":2,"name":"metric-accuracy-label","text":"Core helpers","textPreview":"Core helpers","textChars":12,"textLines":1,"bbox":[68,622,150,20]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":2,"name":"metric-latency-value","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[264,586,120,38]}
+{"kind":"textbox","id":"sh/loj2t83i","slide":2,"name":"metric-latency-label","text":"Eval modes","textPreview":"Eval modes","textChars":10,"textLines":1,"bbox":[264,622,120,20]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":2,"name":"metric-tests-value","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[430,586,150,38]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":2,"name":"metric-tests-label","text":"Upload types","textPreview":"Upload types","textChars":12,"textLines":1,"bbox":[430,622,150,20]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":2,"name":"index-01","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[660,184,52,24]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":2,"name":"heading-01","text":"Registry and schema","textPreview":"Registry and schema","textChars":19,"textLines":1,"bbox":[715,182,500,30]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":2,"name":"body-01","text":"llmops/registry.py and llmops/schema.py load prompt/schema versions instead of hardcoding extraction contract.","textPreview":"llmops/registry.py and llmops/schema.py load prompt/schema versions instead of hardcoding extraction contract.","textChars":110,"textLines":1,"bbox":[715,214,500,48]}
+{"kind":"shape","id":"sh/wra5gbq1","slide":2,"name":"rule-01","bbox":[715,272,500,1]}
+{"kind":"textbox","id":"sh/36hcrmhk","slide":2,"name":"index-02","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[660,278,52,24]}
+{"kind":"textbox","id":"sh/eloj2t83","slide":2,"name":"heading-02","text":"Live provider path","textPreview":"Live provider path","textChars":18,"textLines":1,"bbox":[715,276,500,30]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":2,"name":"body-02","text":"llmops/live_provider.py and llmops/pipeline.py run per-document live eval and score every result row.","textPreview":"llmops/live_provider.py and llmops/pipeline.py run per-document live eval and score every result row.","textChars":101,"textLines":1,"bbox":[715,308,500,48]}
+{"kind":"shape","id":"sh/wfyxobm5","slide":2,"name":"rule-02","bbox":[715,366,500,1]}
+{"kind":"textbox","id":"sh/7u54zido","slide":2,"name":"index-03","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[660,372,52,24]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":2,"name":"heading-03","text":"Reporting and telemetry","textPreview":"Reporting and telemetry","textChars":23,"textLines":1,"bbox":[715,370,500,30]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":2,"name":"body-03","text":"llmops/reporting.py and telemetry.py add charts, HTML output, token-cost totals, and Pushgateway rollups.","textPreview":"llmops/reporting.py and telemetry.py add charts, HTML output, token-cost totals, and Pushgateway rollups.","textChars":105,"textLines":1,"bbox":[715,402,500,48]}
+{"kind":"shape","id":"sh/w7mp0bi9","slide":2,"name":"rule-03","bbox":[715,460,500,1]}
+{"kind":"textbox","id":"sh/65wjudg7","slide":2,"name":"index-04","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[660,466,52,24]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":2,"name":"heading-04","text":"Backend integration","textPreview":"Backend integration","textChars":19,"textLines":1,"bbox":[715,464,500,30]}
+{"kind":"textbox","id":"sh/obm58z25","slide":2,"name":"body-04","text":"app_backend.py now attaches LLMOps metadata to JPG, PDF, and DOCX extraction responses.","textPreview":"app_backend.py now attaches LLMOps metadata to JPG, PDF, and DOCX extraction responses.","textChars":87,"textLines":1,"bbox":[715,496,500,48]}
+{"kind":"shape","id":"sh/hwfyxobm","slide":2,"name":"rule-04","bbox":[715,554,500,1]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":2,"name":"sources","text":"Sources: README.md, docs/llmops.md, app_backend.py, llmops/*.py, scripts/run_llmops_pipeline.py","textPreview":"Sources: README.md, docs/llmops.md, app_backend.py, llmops/*.py, scripts/run_llmops_pipeline.py","textChars":95,"textLines":1,"bbox":[44,684,1190,18]}
+{"kind":"image","id":"im/gfmlkjm1","slide":2,"name":"","alt":"Pipeline and code changes","bbox":[78,220.5,510,255]}
+{"kind":"notes","id":"nt/pg3ex0nu","slide":2,"text":""}
+{"kind":"slide","id":"sl/s72x4nap","slide":3,"title":"MILESTONE 2 INVOICE APP","textShapes":23}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":3,"name":"kicker","text":"MILESTONE 2 INVOICE APP","textPreview":"MILESTONE 2 INVOICE APP","textChars":23,"textLines":1,"bbox":[44,34,320,22]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":3,"name":"title","text":"Quality gates and contract hardening","textPreview":"Quality gates and contract hardening","textChars":36,"textLines":1,"bbox":[44,58,900,48]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":3,"name":"subtitle","text":"Offline eval, live eval, and shared normalization now catch schema drift before release.","textPreview":"Offline eval, live eval, and shared normalization now catch schema drift before release.","textChars":88,"textLines":1,"bbox":[44,112,860,28]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":3,"name":"top-rule","bbox":[44,152,1190,1]}
+{"kind":"shape","id":"sh/vy90je9c","slide":3,"name":"chart-panel","bbox":[44,178,578,474]}
+{"kind":"shape","id":"sh/oj2t83it","slide":3,"name":"chart-frame","bbox":[68,202,530,292]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":3,"name":"chart-caption","text":"Offline golden eval remains deterministic and currently passes at 1.00 average field accuracy.","textPreview":"Offline golden eval remains deterministic and currently passes at 1.00 average field accuracy.","textChars":94,"textLines":1,"bbox":[68,512,530,46]}
+{"kind":"shape","id":"sh/z25kb6xk","slide":3,"name":"metric-top-rule","bbox":[68,574,530,1]}
+{"kind":"shape","id":"sh/vy90je9c","slide":3,"name":"metric-rule-1","bbox":[244,590,1,48]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":3,"name":"metric-rule-2","bbox":[412,590,1,48]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":3,"name":"metric-accuracy-value","text":"1.00","textPreview":"1.00","textChars":4,"textLines":1,"bbox":[68,586,150,38]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":3,"name":"metric-accuracy-label","text":"Offline avg","textPreview":"Offline avg","textChars":11,"textLines":1,"bbox":[68,622,150,20]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":3,"name":"metric-latency-value","text":"0.80","textPreview":"0.80","textChars":4,"textLines":1,"bbox":[264,586,120,38]}
+{"kind":"textbox","id":"sh/61032lsz","slide":3,"name":"metric-latency-label","text":"Gate threshold","textPreview":"Gate threshold","textChars":14,"textLines":1,"bbox":[264,622,120,20]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":3,"name":"metric-tests-value","text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[430,586,150,38]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":3,"name":"metric-tests-label","text":"LLMOps tests","textPreview":"LLMOps tests","textChars":12,"textLines":1,"bbox":[430,622,150,20]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":3,"name":"index-01","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[660,184,52,24]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":3,"name":"heading-01","text":"Golden dataset","textPreview":"Golden dataset","textChars":14,"textLines":1,"bbox":[715,182,500,30]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":3,"name":"body-01","text":"OCR-text fixtures in data/golden keep regressions reviewable without live model dependency.","textPreview":"OCR-text fixtures in data/golden keep regressions reviewable without live model dependency.","textChars":91,"textLines":1,"bbox":[715,214,500,48]}
+{"kind":"shape","id":"sh/7adsji5s","slide":3,"name":"rule-01","bbox":[715,272,500,1]}
+{"kind":"textbox","id":"sh/wval87ed","slide":3,"name":"index-02","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[660,278,52,24]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":3,"name":"heading-02","text":"Nested line items","textPreview":"Nested line items","textChars":17,"textLines":1,"bbox":[715,276,500,30]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":3,"name":"body-02","text":"v2 contract scores scalar fields and order_items separately so line-item drift stays visible.","textPreview":"v2 contract scores scalar fields and order_items separately so line-item drift stays visible.","textChars":93,"textLines":1,"bbox":[715,308,500,48]}
+{"kind":"shape","id":"sh/7mp0bi9s","slide":3,"name":"rule-02","bbox":[715,366,500,1]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":3,"name":"index-03","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[660,372,52,24]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":3,"name":"heading-03","text":"Normalization fix","textPreview":"Normalization fix","textChars":17,"textLines":1,"bbox":[715,370,500,30]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":3,"name":"body-03","text":"Shared coercion converts model numeric values to schema-safe strings before validation runs.","textPreview":"Shared coercion converts model numeric values to schema-safe strings before validation runs.","textChars":92,"textLines":1,"bbox":[715,402,500,48]}
+{"kind":"shape","id":"sh/7u54zido","slide":3,"name":"rule-03","bbox":[715,460,500,1]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":3,"name":"index-04","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[660,466,52,24]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":3,"name":"heading-04","text":"Artifact proof","textPreview":"Artifact proof","textChars":14,"textLines":1,"bbox":[715,464,500,30]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":3,"name":"body-04","text":"CI publishes llmops-eval-report and live-llmops-report so failures are inspectable from artifacts.","textPreview":"CI publishes llmops-eval-report and live-llmops-report so failures are inspectable from artifacts.","textChars":98,"textLines":1,"bbox":[715,496,500,48]}
+{"kind":"shape","id":"sh/m58z25kb","slide":3,"name":"rule-04","bbox":[715,554,500,1]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":3,"name":"sources","text":"Sources: docs/llmops.md, outputs/llmops_eval_report.json, tests/unit/test_llmops_*.py","textPreview":"Sources: docs/llmops.md, outputs/llmops_eval_report.json, tests/unit/test_llmops_*.py","textChars":85,"textLines":1,"bbox":[44,684,1190,18]}
+{"kind":"image","id":"im/bulwval8","slide":3,"name":"","alt":"Quality gates and contract hardening","bbox":[78,220.5,510,255]}
+{"kind":"notes","id":"nt/s72x4nap","slide":3,"text":""}
+{"kind":"slide","id":"sl/val87ed8","slide":4,"title":"MILESTONE 2 INVOICE APP","textShapes":23}
+{"kind":"textbox","id":"sh/1gvy90je","slide":4,"name":"kicker","text":"MILESTONE 2 INVOICE APP","textPreview":"MILESTONE 2 INVOICE APP","textChars":23,"textLines":1,"bbox":[44,34,320,22]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":4,"name":"title","text":"Live performance and operations","textPreview":"Live performance and operations","textChars":31,"textLines":1,"bbox":[44,58,900,48]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":4,"name":"subtitle","text":"Latest live run meets target and feeds monitoring path used for operational visibility.","textPreview":"Latest live run meets target and feeds monitoring path used for operational visibility.","textChars":87,"textLines":1,"bbox":[44,112,860,28]}
+{"kind":"shape","id":"sh/87ed8bat","slide":4,"name":"top-rule","bbox":[44,152,1190,1]}
+{"kind":"shape","id":"sh/xs72x4na","slide":4,"name":"chart-panel","bbox":[44,178,578,474]}
+{"kind":"shape","id":"sh/q1orytsv","slide":4,"name":"chart-frame","bbox":[68,202,530,292]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":4,"name":"chart-caption","text":"Current live report: 92.9% average accuracy, 5.14s average latency, 0 invalid documents.","textPreview":"Current live report: 92.9% average accuracy, 5.14s average latency, 0 invalid documents.","textChars":88,"textLines":1,"bbox":[68,512,530,46]}
+{"kind":"shape","id":"sh/x4nap4r6","slide":4,"name":"metric-top-rule","bbox":[68,574,530,1]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":4,"name":"metric-rule-1","bbox":[244,590,1,48]}
+{"kind":"shape","id":"sh/8bat47y1","slide":4,"name":"metric-rule-2","bbox":[412,590,1,48]}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":4,"name":"metric-accuracy-value","text":"92.9%","textPreview":"92.9%","textChars":5,"textLines":1,"bbox":[68,586,150,38]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":4,"name":"metric-accuracy-label","text":"Live accuracy","textPreview":"Live accuracy","textChars":13,"textLines":1,"bbox":[68,622,150,20]}
+{"kind":"textbox","id":"sh/18jqh0fe","slide":4,"name":"metric-latency-value","text":"5.14s","textPreview":"5.14s","textChars":5,"textLines":1,"bbox":[264,586,120,38]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":4,"name":"metric-latency-label","text":"Avg latency","textPreview":"Avg latency","textChars":11,"textLines":1,"bbox":[264,622,120,20]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":4,"name":"metric-tests-value","text":"0","textPreview":"0","textChars":1,"textLines":1,"bbox":[430,586,150,38]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":4,"name":"metric-tests-label","text":"Invalid docs","textPreview":"Invalid docs","textChars":12,"textLines":1,"bbox":[430,622,150,20]}
+{"kind":"textbox","id":"sh/1cfa9w3m","slide":4,"name":"index-01","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[660,184,52,24]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":4,"name":"heading-01","text":"Provider config","textPreview":"Provider config","textChars":15,"textLines":1,"bbox":[715,182,500,30]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":4,"name":"body-01","text":"Live pipeline uses OPENAI_API_KEY, optional OPENAI_API_BASE, pricing config, and optional Pushgateway URL.","textPreview":"Live pipeline uses OPENAI_API_KEY, optional OPENAI_API_BASE, pricing config, and optional Pushgateway URL.","textChars":106,"textLines":1,"bbox":[715,214,500,48]}
+{"kind":"shape","id":"sh/h0fepkzu","slide":4,"name":"rule-01","bbox":[715,272,500,1]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":4,"name":"index-02","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[660,278,52,24]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":4,"name":"heading-02","text":"Observability stack","textPreview":"Observability stack","textChars":19,"textLines":1,"bbox":[715,276,500,30]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":4,"name":"body-02","text":"docker-compose.yml exposes app metrics, Prometheus, Pushgateway, and Grafana for pipeline monitoring.","textPreview":"docker-compose.yml exposes app metrics, Prometheus, Pushgateway, and Grafana for pipeline monitoring.","textChars":101,"textLines":1,"bbox":[715,308,500,48]}
+{"kind":"shape","id":"sh/hcrmhk3q","slide":4,"name":"rule-02","bbox":[715,366,500,1]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":4,"name":"index-03","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[660,372,52,24]}
+{"kind":"textbox","id":"sh/z61032ls","slide":4,"name":"heading-03","text":"Fallback discipline","textPreview":"Fallback discipline","textChars":19,"textLines":1,"bbox":[715,370,500,30]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":4,"name":"body-03","text":"Live evaluator does not count local fallback as provider success, keeping report quality honest.","textPreview":"Live evaluator does not count local fallback as provider success, keeping report quality honest.","textChars":96,"textLines":1,"bbox":[715,402,500,48]}
+{"kind":"shape","id":"sh/hk3q5o7q","slide":4,"name":"rule-03","bbox":[715,460,500,1]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":4,"name":"index-04","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[660,466,52,24]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":4,"name":"heading-04","text":"Operational benefit","textPreview":"Operational benefit","textChars":19,"textLines":1,"bbox":[715,464,500,30]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":4,"name":"body-04","text":"Same contract now shows up in app runtime, CI artifacts, and live performance reporting.","textPreview":"Same contract now shows up in app runtime, CI artifacts, and live performance reporting.","textChars":88,"textLines":1,"bbox":[715,496,500,48]}
+{"kind":"shape","id":"sh/w7mp0bi9","slide":4,"name":"rule-04","bbox":[715,554,500,1]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":4,"name":"sources","text":"Sources: outputs/llmops/live_eval_report.json, docs/llmops.md, docker-compose.yml","textPreview":"Sources: outputs/llmops/live_eval_report.json, docs/llmops.md, docker-compose.yml","textChars":81,"textLines":1,"bbox":[44,684,1190,18]}
+{"kind":"image","id":"im/pwb2hwfy","slide":4,"name":"","alt":"Live performance and operations","bbox":[78,220.5,510,255]}
+{"kind":"notes","id":"nt/val87ed8","slide":4,"text":""}

@@ -19,9 +19,7 @@ ROOT = Path(__file__).resolve().parent
 api = Milestone1NotebookAPI(ROOT)
 
 if not api.ocr_available:
-    st.warning(
-        "OCR models missing. Add craft_mlt_25k.pth and english_g2.pth to repository root to enable processing."
-    )
+    st.warning(api.ocr_unavailable_reason or "OCR runtime unavailable.")
 
 if "rag_docs" not in st.session_state:
     st.session_state.rag_docs = []

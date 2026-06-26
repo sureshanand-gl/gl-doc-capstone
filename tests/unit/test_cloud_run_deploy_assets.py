@@ -206,6 +206,16 @@ def test_cloud_run_safe_env_and_model_bake_contract_are_declared():
     assert "OPS_BASIC_AUTH_PASSWORD=" in env_example
 
 
+def test_runtime_uses_headless_opencv_dependency_for_slim_linux_images():
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    lockfile = (REPO_ROOT / "uv.lock").read_text(encoding="utf-8")
+
+    assert '"opencv-python-headless>=' in pyproject
+    assert '"opencv-python>=' not in pyproject
+    assert '{ name = "opencv-python-headless" }' in lockfile
+    assert '{ name = "opencv-python" }' not in lockfile
+
+
 def test_deploy_scripts_parse_successfully():
     bash_script = REPO_ROOT / "scripts" / "deploy_cloud_run.sh"
     powershell_script = REPO_ROOT / "scripts" / "deploy_cloud_run.ps1"

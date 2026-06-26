@@ -44,6 +44,29 @@ def test_process_upload_returns_error_when_ocr_models_missing(monkeypatch):
     assert "craft_mlt_25k.pth" in result["error"]
 
 
+def test_backend_initializes_in_degraded_mode_when_cv2_missing(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr("app_backend.cv2", None)
+
+    api = Milestone1NotebookAPI(repo_root)
+
+    assert api.ocr_available is False
+    assert api.ocr_error_code == "ocr_runtime_missing"
+    assert "cv2" in api.ocr_unavailable_reason
+
+
+def test_process_upload_returns_runtime_error_when_cv2_missing(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[2]
+    monkeypatch.setattr("app_backend.cv2", None)
+
+    api = Milestone1NotebookAPI(repo_root)
+    result = api.process_upload(DummyUpload("sample.jpg", b"fake-bytes"))
+
+    assert result["status"] == "error"
+    assert result["error_code"] == "ocr_runtime_missing"
+    assert "cv2" in result["error"]
+
+
 def test_layout_worker_resolution_prefers_explicit_env_override(monkeypatch):
     repo_root = Path(__file__).resolve().parents[2]
     monkeypatch.setenv("LAYOUT_WORKER_PYTHON", r"C:\layout\python.exe")

@@ -10,11 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional, Tuple
 
-import cv2
-import easyocr
 import httpx
 import numpy as np
-import pypdfium2 as pdfium
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -23,6 +20,30 @@ from llmops.registry import load_prompt_registry
 from llmops.schema import validate_invoice_fields
 from llmops.telemetry import calculate_usage_cost, get_default_telemetry, normalize_usage
 from llmops.tracing import write_trace_record
+
+try:
+    import cv2
+except Exception as exc:
+    cv2 = None
+    CV2_IMPORT_ERROR: Exception | None = exc
+else:
+    CV2_IMPORT_ERROR = None
+
+try:
+    import easyocr
+except Exception as exc:
+    easyocr = None
+    EASYOCR_IMPORT_ERROR: Exception | None = exc
+else:
+    EASYOCR_IMPORT_ERROR = None
+
+try:
+    import pypdfium2 as pdfium
+except Exception as exc:
+    pdfium = None
+    PDFIUM_IMPORT_ERROR: Exception | None = exc
+else:
+    PDFIUM_IMPORT_ERROR = None
 
 
 class Milestone1NotebookAPI:
@@ -64,14 +85,25 @@ class Milestone1NotebookAPI:
         self.easyocr_model_dir = self._resolve_env_path("EASYOCR_MODEL_DIR", workspace_root)
         self.craft_model_path = self.easyocr_model_dir / "craft_mlt_25k.pth"
         self.english_model_path = self.easyocr_model_dir / "english_g2.pth"
-        self.ocr_available = self.craft_model_path.exists() and self.english_model_path.exists()
+        self.ocr_available = False
         self.ocr_unavailable_reason: Optional[str] = None
+        self.ocr_error_code: Optional[str] = None
         self.reader = None
-        if not self.ocr_available:
+        if cv2 is None:
+            self.ocr_error_code = "ocr_runtime_missing"
+            detail = CV2_IMPORT_ERROR or "module unavailable"
+            self.ocr_unavailable_reason = f"cv2 import failed: {detail}"
+        elif easyocr is None:
+            self.ocr_error_code = "ocr_runtime_missing"
+            detail = EASYOCR_IMPORT_ERROR or "module unavailable"
+            self.ocr_unavailable_reason = f"easyocr import failed: {detail}"
+        elif not (self.craft_model_path.exists() and self.english_model_path.exists()):
+            self.ocr_error_code = "ocr_models_missing"
             self.ocr_unavailable_reason = (
                 "Required EasyOCR model files not found: craft_mlt_25k.pth and english_g2.pth"
             )
         else:
+            self.ocr_available = True
             self.reader = easyocr.Reader(
                 ["en"],
                 gpu=False,
@@ -688,7 +720,7 @@ class Milestone1NotebookAPI:
     def _missing_ocr_result(self) -> Dict[str, Any]:
         return {
             "status": "error",
-            "error_code": "ocr_models_missing",
+            "error_code": self.ocr_error_code or "ocr_unavailable",
             "error": self.ocr_unavailable_reason or "Required OCR models are unavailable",
         }
 
@@ -724,6 +756,12 @@ class Milestone1NotebookAPI:
     def ocr_pdf_upload(self, uploaded_file) -> Dict[str, Any]:
         if not self.ocr_available:
             return self._missing_ocr_result()
+        if pdfium is None:
+            return {
+                "status": "error",
+                "error_code": "pdf_runtime_missing",
+                "error": f"pypdfium2 import failed: {PDFIUM_IMPORT_ERROR or 'module unavailable'}",
+            }
 
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp.write(uploaded_file.read())
