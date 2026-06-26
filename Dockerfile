@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+ARG PYTHON_BASE_IMAGE=python:3.11-slim
+FROM ${PYTHON_BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -21,6 +22,7 @@ COPY schemas ./schemas
 COPY data ./data
 COPY app_backend.py app_frontend.py app_frontend_helpers.py ./
 COPY configs ./configs
+COPY models/easyocr /models/easyocr
 
 RUN uv sync --locked --no-dev
 

@@ -1,0 +1,44 @@
+substitutions:
+  _REGION: us-central1
+  _REPO: gl-doc-capstone
+  _TAG: latest
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-app:${_TAG}
+      - -f
+      - Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-proxy:${_TAG}
+      - -f
+      - docker/cloudrun/proxy/Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-prometheus:${_TAG}
+      - -f
+      - docker/cloudrun/prometheus/Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-grafana:${_TAG}
+      - -f
+      - docker/cloudrun/grafana/Dockerfile
+      - .
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-app:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-proxy:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-prometheus:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-grafana:${_TAG}

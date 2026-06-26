@@ -8,7 +8,11 @@
 __pycache__
 outputs
 Datasets
-models
+models/*
+!models/easyocr/
+models/easyocr/*
+!models/easyocr/craft_mlt_25k.pth
+!models/easyocr/english_g2.pth
 *.pyc
 *.pyo
 *.pyd
