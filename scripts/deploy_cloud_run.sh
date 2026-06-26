@@ -12,6 +12,7 @@ MIN_INSTANCES="1"
 DRY_RUN="false"
 SETUP_INFRA="false"
 SYNC_SECRETS="false"
+IMAGE_PLATFORM="${IMAGE_PLATFORM:-linux/amd64}"
 PYTHON_BASE_IMAGE="${PYTHON_BASE_IMAGE:-python:3.11-slim}"
 PROXY_BASE_IMAGE="${PROXY_BASE_IMAGE:-nginx:1.27-alpine}"
 PROMETHEUS_BASE_IMAGE="${PROMETHEUS_BASE_IMAGE:-prom/prometheus:v2.54.1}"
@@ -55,6 +56,7 @@ Options:
   --min-instances COUNT
   --setup-infra
   --sync-secrets
+  --image-platform PLATFORM
   --python-base-image IMAGE
   --proxy-base-image IMAGE
   --prometheus-base-image IMAGE
@@ -77,6 +79,7 @@ while [[ $# -gt 0 ]]; do
     --min-instances) MIN_INSTANCES="$2"; shift 2 ;;
     --setup-infra) SETUP_INFRA="true"; shift ;;
     --sync-secrets) SYNC_SECRETS="true"; shift ;;
+    --image-platform) IMAGE_PLATFORM="$2"; shift 2 ;;
     --python-base-image) PYTHON_BASE_IMAGE="$2"; shift 2 ;;
     --proxy-base-image) PROXY_BASE_IMAGE="$2"; shift 2 ;;
     --prometheus-base-image) PROMETHEUS_BASE_IMAGE="$2"; shift 2 ;;
@@ -353,7 +356,7 @@ build_and_push_images() {
 
   local i
   for ((i = 0; i < ${#images[@]}; i++)); do
-    docker build --build-arg "${build_args[$i]}" -t "${images[$i]}" -f "${dockerfiles[$i]}" .
+    docker build --platform "$IMAGE_PLATFORM" --build-arg "${build_args[$i]}" -t "${images[$i]}" -f "${dockerfiles[$i]}" .
     docker push "${images[$i]}"
   done
 }
@@ -391,6 +394,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
   echo "Region: $REGION"
   echo "Service: $SERVICE"
   echo "Repo: $REPO"
+  echo "Image platform: $IMAGE_PLATFORM"
   echo "Setup infra: $SETUP_INFRA"
   echo "Sync secrets: $SYNC_SECRETS"
   echo "Images:"

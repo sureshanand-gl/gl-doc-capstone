@@ -9,6 +9,7 @@ param(
     [int]$MinInstances = 1,
     [switch]$SetupInfra,
     [switch]$SyncSecrets,
+    [string]$ImagePlatform = "linux/amd64",
     [string]$PythonBaseImage = "python:3.11-slim",
     [string]$ProxyBaseImage = "nginx:1.27-alpine",
     [string]$PrometheusBaseImage = "prom/prometheus:v2.54.1",
@@ -269,7 +270,7 @@ function Invoke-LocalDockerBuilds {
         $image = $build["Image"]
         $dockerfile = $build["Dockerfile"]
         $buildArg = $build["BuildArg"]
-        & docker build --build-arg $buildArg -t $image -f $dockerfile .
+        & docker build --platform $ImagePlatform --build-arg $buildArg -t $image -f $dockerfile .
         if ($LASTEXITCODE -ne 0) {
             throw "docker build failed for $image"
         }
@@ -313,6 +314,7 @@ if ($DryRun) {
     Write-Output "Region: $Region"
     Write-Output "Service: $Service"
     Write-Output "Repo: $Repo"
+    Write-Output "Image platform: $ImagePlatform"
     Write-Output "Setup infra: $SetupInfra"
     Write-Output "Sync secrets: $SyncSecrets"
     Write-Output "Images:"

@@ -44,6 +44,18 @@ def test_deploy_scripts_build_and_push_images_with_local_docker():
     assert 'Assert-Command "docker"' in ps_text
 
 
+def test_deploy_scripts_build_cloud_run_images_for_amd64_linux():
+    bash_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.sh").read_text(encoding="utf-8")
+    ps_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.ps1").read_text(encoding="utf-8")
+
+    assert 'IMAGE_PLATFORM="${IMAGE_PLATFORM:-linux/amd64}"' in bash_text
+    assert "--image-platform" in bash_text
+    assert "docker build --platform \"$IMAGE_PLATFORM\"" in bash_text
+
+    assert '[string]$ImagePlatform = "linux/amd64"' in ps_text
+    assert "& docker build --platform $ImagePlatform" in ps_text
+
+
 def test_deploy_scripts_make_infra_and_secret_sync_opt_in():
     bash_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.sh").read_text(encoding="utf-8")
     ps_text = (REPO_ROOT / "scripts" / "deploy_cloud_run.ps1").read_text(encoding="utf-8")
@@ -92,8 +104,8 @@ def test_cloud_run_dockerfiles_allow_base_image_overrides():
         assert f"{build_arg}=" in bash_text
         assert f"{build_arg}=" in ps_text
 
-    assert "docker build --build-arg" in bash_text
-    assert "docker build --build-arg" in ps_text
+    assert 'docker build --platform "$IMAGE_PLATFORM" --build-arg' in bash_text
+    assert "docker build --platform $ImagePlatform --build-arg" in ps_text
 
 
 def test_proxy_routes_streamlit_and_protects_observability_paths():
