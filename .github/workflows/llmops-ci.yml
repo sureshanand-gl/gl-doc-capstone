@@ -48,10 +48,14 @@ jobs:
           llmops/schema.py
           llmops/metrics.py
           llmops/registry.py
+          llmops/telemetry.py
           llmops/tracing.py
           scripts/run_golden_eval.py
           scripts/run_llmops_pipeline.py
           scripts/layout_worker.py
+
+      - name: Validate Docker Compose
+        run: docker compose config > docker-compose.resolved.yml
 
       - name: Run unit tests
         run: uv run pytest -q

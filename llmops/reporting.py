@@ -39,6 +39,10 @@ def build_live_eval_report(
     schema_version: str,
 ) -> dict[str, Any]:
     average_accuracy = _average_accuracy(rows)
+    total_prompt_tokens = sum(int(row.get("prompt_tokens") or 0) for row in rows)
+    total_completion_tokens = sum(int(row.get("completion_tokens") or 0) for row in rows)
+    total_tokens = sum(int(row.get("total_tokens") or 0) for row in rows)
+    total_cost_usd = round(sum(float(row.get("cost_usd") or 0.0) for row in rows), 8)
     return {
         "documents": len(rows),
         "prompt_version": prompt_version,
@@ -54,6 +58,10 @@ def build_live_eval_report(
             4,
         ) if rows else 0.0,
         "average_latency_ms": _average_latency(rows),
+        "total_prompt_tokens": total_prompt_tokens,
+        "total_completion_tokens": total_completion_tokens,
+        "total_tokens": total_tokens,
+        "total_cost_usd": total_cost_usd,
         "meets_threshold": average_accuracy >= min_field_accuracy,
         "invalid_documents": sum(1 for row in rows if row["validation_status"] != "valid"),
         "fallback_documents": sum(1 for row in rows if row.get("fallback_reason")),
@@ -103,6 +111,10 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
         f"<td>{row['scalar_field_accuracy']:.2%}</td>"
         f"<td>{row['order_item_field_accuracy']:.2%}</td>"
         f"<td>{row['latency_ms']:.2f}</td>"
+        f"<td>{_render_status(row.get('prompt_tokens'))}</td>"
+        f"<td>{_render_status(row.get('completion_tokens'))}</td>"
+        f"<td>{_render_status(row.get('cost_usd'))}</td>"
+        f"<td>{html.escape(str(row.get('usage_source', 'unavailable')))}</td>"
         f"<td>{html.escape(row['validation_status'])}</td>"
         f"<td>{_render_status(row.get('fallback_reason'))}</td>"
         f"<td>{html.escape(', '.join(row['missing_fields']))}</td>"
@@ -126,7 +138,7 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
   <title>Live LLMOps Evaluation Report</title>
   <style>
     body {{ font-family: Arial, sans-serif; margin: 32px; color: #1f2933; }}
-    .cards {{ display: grid; grid-template-columns: repeat(6, minmax(140px, 1fr)); gap: 12px; }}
+    .cards {{ display: grid; grid-template-columns: repeat(8, minmax(140px, 1fr)); gap: 12px; }}
     .card {{ border: 1px solid #d8dee4; border-radius: 6px; padding: 14px; }}
     .metric {{ font-size: 28px; font-weight: 700; }}
     table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
@@ -144,6 +156,9 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
     <div class="card"><div>Scalar Accuracy</div><div class="metric">{report['average_scalar_field_accuracy']:.2%}</div></div>
     <div class="card"><div>Line Item Accuracy</div><div class="metric">{report['average_order_item_field_accuracy']:.2%}</div></div>
     <div class="card"><div>Average Latency</div><div class="metric">{report['average_latency_ms']:.2f} ms</div></div>
+    <div class="card"><div>Total Prompt Tokens</div><div class="metric">{report['total_prompt_tokens']}</div></div>
+    <div class="card"><div>Total Completion Tokens</div><div class="metric">{report['total_completion_tokens']}</div></div>
+    <div class="card"><div>Total Cost USD</div><div class="metric">{report['total_cost_usd']:.6f}</div></div>
     <div class="card"><div>Meets Threshold</div><div class="metric">{report['meets_threshold']}</div></div>
   </div>
   <h2>Charts</h2>
@@ -154,7 +169,7 @@ def _write_html_report(report: dict[str, Any], output_path: Path) -> None:
     <thead>
       <tr>
         <th>Document</th><th>Source</th><th>Provider</th><th>Model</th>
-        <th>Accuracy</th><th>Scalar</th><th>Line Items</th><th>Latency ms</th><th>Validation</th><th>Fallback</th>
+        <th>Accuracy</th><th>Scalar</th><th>Line Items</th><th>Latency ms</th><th>Prompt Tokens</th><th>Completion Tokens</th><th>Cost USD</th><th>Usage Source</th><th>Validation</th><th>Fallback</th>
         <th>Missing Fields</th>
       </tr>
     </thead>

@@ -1,0 +1,4 @@
+models:
+  gpt-4o-mini:
+    input_cost_per_1k_tokens: 0.00015
+    output_cost_per_1k_tokens: 0.0006
