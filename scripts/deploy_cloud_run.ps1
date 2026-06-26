@@ -17,7 +17,7 @@ param(
     [switch]$DryRun
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 $AppEnvKeys = @(
     "OPENAI_API_KEY",
@@ -87,6 +87,19 @@ function Get-SecretName {
     return "$Service-$Key"
 }
 
+function Test-GcloudEntity {
+    param([string[]]$ProbeArgs)
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & gcloud @ProbeArgs *> $null
+        return $LASTEXITCODE -eq 0
+    }
+    finally {
+        $ErrorActionPreference = $prevEap
+    }
+}
+
 function Assert-Command {
     param([string]$Name)
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -126,12 +139,15 @@ function Sync-Secret {
     }
 
     $secretName = Get-SecretName $Key
-    & gcloud secrets describe $secretName --project $Project *> $null
-    if ($LASTEXITCODE -ne 0) {
+    $secretExists = Test-GcloudEntity @("secrets", "describe", $secretName, "--project", $Project)
+    if (-not $secretExists) {
         & gcloud secrets create $secretName `
             --project $Project `
             --replication-policy automatic `
             --quiet
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud secrets create failed for $secretName"
+        }
     }
 
     $tempFile = [System.IO.Path]::GetTempFileName()
@@ -140,7 +156,10 @@ function Sync-Secret {
         & gcloud secrets versions add $secretName `
             --project $Project `
             --data-file $tempFile `
-            --quiet *> $null
+            --quiet
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud secrets versions add failed for $secretName"
+        }
     }
     finally {
         Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
@@ -150,7 +169,10 @@ function Sync-Secret {
         --project $Project `
         --member "serviceAccount:$ServiceAccountEmail" `
         --role roles/secretmanager.secretAccessor `
-        --quiet *> $null
+        --quiet
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud secrets add-iam-policy-binding failed for $secretName"
+    }
 }
 
 function Add-SecretEnvYaml {
@@ -341,21 +363,30 @@ if ($SetupInfra) {
         secretmanager.googleapis.com `
         iam.googleapis.com `
         --project $Project
-
-    & gcloud artifacts repositories describe $Repo --project $Project --location $Region *> $null
     if ($LASTEXITCODE -ne 0) {
+        throw "gcloud services enable failed"
+    }
+
+    $repoExists = Test-GcloudEntity @("artifacts", "repositories", "describe", $Repo, "--project", $Project, "--location", $Region)
+    if (-not $repoExists) {
         & gcloud artifacts repositories create $Repo `
             --project $Project `
             --location $Region `
             --repository-format docker `
             --description "gl-doc-capstone Cloud Run images"
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud artifacts repositories create failed for $Repo"
+        }
     }
 
-    & gcloud iam service-accounts describe $ServiceAccountEmail --project $Project *> $null
-    if ($LASTEXITCODE -ne 0) {
+    $saExists = Test-GcloudEntity @("iam", "service-accounts", "describe", $ServiceAccountEmail, "--project", $Project)
+    if (-not $saExists) {
         & gcloud iam service-accounts create $ServiceAccountName `
             --project $Project `
             --display-name "$Service Cloud Run runtime"
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud iam service-accounts create failed for $ServiceAccountName"
+        }
     }
 }
 
@@ -371,6 +402,9 @@ $serviceYaml = [System.IO.Path]::GetTempFileName()
 try {
     Write-ServiceYaml $EnvValues $serviceYaml
     & gcloud run services replace $serviceYaml --project $Project --region $Region
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud run services replace failed for $Service"
+    }
 }
 finally {
     Remove-Item $serviceYaml -Force -ErrorAction SilentlyContinue
@@ -382,7 +416,10 @@ if ($AllowUnauthenticated) {
         --region $Region `
         --member allUsers `
         --role roles/run.invoker `
-        --quiet *> $null
+        --quiet
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud run services add-iam-policy-binding failed for $Service"
+    }
 }
 else {
     & gcloud run services remove-iam-policy-binding $Service `
@@ -390,10 +427,16 @@ else {
         --region $Region `
         --member allUsers `
         --role roles/run.invoker `
-        --quiet *> $null
+        --quiet
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud run services remove-iam-policy-binding failed for $Service"
+    }
 }
 
 & gcloud run services describe $Service `
     --project $Project `
     --region $Region `
     --format "value(status.url)"
+if ($LASTEXITCODE -ne 0) {
+    throw "gcloud run services describe failed for $Service"
+}
