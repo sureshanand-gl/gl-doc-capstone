@@ -7,7 +7,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
@@ -141,7 +141,19 @@ class Milestone1NotebookAPI:
         if not configured:
             return default_path
         candidate = Path(configured)
-        return candidate if candidate.is_absolute() else self.workspace_root / candidate
+        return (
+            candidate
+            if self._is_cross_platform_absolute(configured)
+            else self.workspace_root / candidate
+        )
+
+    @staticmethod
+    def _is_cross_platform_absolute(path_value: str) -> bool:
+        return (
+            Path(path_value).is_absolute()
+            or PureWindowsPath(path_value).is_absolute()
+            or PurePosixPath(path_value).is_absolute()
+        )
 
     def _resolve_layout_worker_python(self) -> Path:
         explicit = os.getenv("LAYOUT_WORKER_PYTHON")

@@ -64,6 +64,12 @@ def test_model_path_resolution_prefers_env_overrides(monkeypatch):
     assert str(api.qwen_model_dir) == r"C:\models\qwen"
 
 
+def test_cross_platform_absolute_path_detection_handles_windows_and_posix_forms():
+    assert Milestone1NotebookAPI._is_cross_platform_absolute(r"C:\models\easyocr") is True
+    assert Milestone1NotebookAPI._is_cross_platform_absolute("/models/easyocr") is True
+    assert Milestone1NotebookAPI._is_cross_platform_absolute("models/easyocr") is False
+
+
 def test_build_llmops_metadata_includes_usage_fields(monkeypatch):
     repo_root = Path(__file__).resolve().parents[2]
     api = Milestone1NotebookAPI(repo_root)
