@@ -1,4 +1,4 @@
-# Milestone 2 Invoice Understanding (Layout-Aware OCR + LLMOps v2)
+# Invoice Understanding (Layout-Aware OCR + LLMOps v2)
 
 [![LLMOps CI](https://github.com/sureshanand-gl/gl-doc-capstone/actions/workflows/llmops-ci.yml/badge.svg)](https://github.com/sureshanand-gl/gl-doc-capstone/actions/workflows/llmops-ci.yml)
 
