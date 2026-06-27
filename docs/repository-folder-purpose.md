@@ -42,13 +42,14 @@ This file describes purpose of each folder currently present in `gl-doc-capstone
 ## Deployment and Observability Folders
 
 - `docker/` - container and observability assets used by local Compose and Cloud Run packaging.
-- `docker/cloudrun/` - Cloud Run-specific sidecar images and configs.
-- `docker/cloudrun/grafana/` - Grafana container assets tuned for Cloud Run topology.
+- `docker/cloudrun/` - Cloud Run-specific runtime images and configs.
+- `docker/cloudrun/app/` - app-container nginx front door assets exposing Streamlit UI and `/metrics` on one Cloud Run port.
+- `docker/cloudrun/grafana/` - Grafana container assets for direct-service Cloud Run deployment.
 - `docker/cloudrun/grafana/provisioning/` - Cloud Run Grafana provisioning root.
 - `docker/cloudrun/grafana/provisioning/dashboards/` - dashboard provider definitions for Cloud Run Grafana.
 - `docker/cloudrun/grafana/provisioning/datasources/` - datasource definitions for Cloud Run Grafana.
-- `docker/cloudrun/prometheus/` - Prometheus image and scrape config for Cloud Run topology.
-- `docker/cloudrun/proxy/` - nginx proxy image and config protecting observability routes on Cloud Run.
+- `docker/cloudrun/prometheus/` - Prometheus image and runtime scrape templates for Cloud Run deployment.
+- `docker/cloudrun/proxy/` - deprecated nginx proxy assets retained from earlier sidecar Cloud Run topology.
 - `docker/grafana/` - local docker-compose Grafana assets.
 - `docker/grafana/dashboards/` - checked-in Grafana dashboards for LLMOps monitoring.
 - `docker/grafana/provisioning/` - local Grafana provisioning root.

@@ -1,0 +1,12 @@
+# Grafana datasource config pointing Cloud Run Grafana at direct Prometheus service URL.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: __GF_PROMETHEUS_URL__
+    isDefault: true
+    editable: false

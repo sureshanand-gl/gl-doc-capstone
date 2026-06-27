@@ -1,4 +1,4 @@
-<# PowerShell deploy helper that builds, pushes, and optionally provisions Cloud Run stack. #>
+<# PowerShell deploy helper that builds, pushes, and provisions per-service Cloud Run stack. #>
 
 param(
     [string]$Project = "",
@@ -13,7 +13,6 @@ param(
     [switch]$SyncSecrets,
     [string]$ImagePlatform = "linux/amd64",
     [string]$PythonBaseImage = "python:3.11-slim",
-    [string]$ProxyBaseImage = "nginx:1.27-alpine",
     [string]$PrometheusBaseImage = "prom/prometheus:v2.54.1",
     [string]$GrafanaBaseImage = "grafana/grafana-oss:11.2.0",
     [switch]$DryRun
@@ -21,7 +20,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-$AppEnvKeys = @(
+$AppSecretEnvKeys = @(
     "OPENAI_API_KEY",
     "OPENAI_API_BASE",
     "FIELD_EXTRACTOR_MODE",
@@ -29,7 +28,6 @@ $AppEnvKeys = @(
     "LLMOPS_SCHEMA_VERSION",
     "LLMOPS_TRACE_TEXT",
     "PROMETHEUS_METRICS_PORT",
-    "PROMETHEUS_PUSHGATEWAY_URL",
     "LLMOPS_PRICING_FILE",
     "EASYOCR_MODEL_DIR",
     "QWEN_MODEL_DIR",
@@ -38,9 +36,7 @@ $AppEnvKeys = @(
 
 $RequiredEnvKeys = @(
     "OPENAI_API_KEY",
-    "GRAFANA_ADMIN_PASSWORD",
-    "OPS_BASIC_AUTH_USER",
-    "OPS_BASIC_AUTH_PASSWORD"
+    "GRAFANA_ADMIN_PASSWORD"
 )
 
 function Read-EnvFile {
@@ -87,6 +83,12 @@ function Set-Default {
 function Get-SecretName {
     param([string]$Key)
     return "$Service-$Key"
+}
+
+function Get-HostFromUrl {
+    param([string]$Url)
+    $uri = [System.Uri]$Url
+    return $uri.Host
 }
 
 function Test-GcloudEntity {
@@ -207,16 +209,13 @@ function Add-LiteralEnvYaml {
     [void]$Builder.AppendLine("${Indent}  value: `"$Value`"")
 }
 
-function Write-ServiceYaml {
-    param(
-        [hashtable]$Values,
-        [string]$Path
-    )
+function Write-PushgatewayServiceYaml {
+    param([string]$Path)
     $builder = [System.Text.StringBuilder]::new()
     [void]$builder.AppendLine("apiVersion: serving.knative.dev/v1")
     [void]$builder.AppendLine("kind: Service")
     [void]$builder.AppendLine("metadata:")
-    [void]$builder.AppendLine("  name: $Service")
+    [void]$builder.AppendLine("  name: $PushgatewayService")
     [void]$builder.AppendLine("  annotations:")
     [void]$builder.AppendLine("    run.googleapis.com/ingress: all")
     [void]$builder.AppendLine("spec:")
@@ -228,48 +227,127 @@ function Write-ServiceYaml {
     [void]$builder.AppendLine("    spec:")
     [void]$builder.AppendLine("      serviceAccountName: $ServiceAccountEmail")
     [void]$builder.AppendLine("      containers:")
-    [void]$builder.AppendLine("        - name: proxy")
-    [void]$builder.AppendLine("          image: $ProxyImage")
-    [void]$builder.AppendLine("          ports:")
-    [void]$builder.AppendLine("            - name: http1")
-    [void]$builder.AppendLine("              containerPort: 8080")
-    [void]$builder.AppendLine("          env:")
-    Add-SecretEnvYaml $builder $Values @("OPS_BASIC_AUTH_USER", "OPS_BASIC_AUTH_PASSWORD") "            "
-    [void]$builder.AppendLine("          resources:")
-    [void]$builder.AppendLine("            limits:")
-    [void]$builder.AppendLine("              cpu: `"1`"")
-    [void]$builder.AppendLine("              memory: 256Mi")
-    [void]$builder.AppendLine("        - name: app")
-    [void]$builder.AppendLine("          image: $AppImage")
-    [void]$builder.AppendLine("          env:")
-    Add-SecretEnvYaml $builder $Values $AppEnvKeys "            "
-    [void]$builder.AppendLine("          resources:")
-    [void]$builder.AppendLine("            limits:")
-    [void]$builder.AppendLine("              cpu: `"2`"")
-    [void]$builder.AppendLine("              memory: 4Gi")
-    [void]$builder.AppendLine("        - name: prometheus")
-    [void]$builder.AppendLine("          image: $PrometheusImage")
-    [void]$builder.AppendLine("          resources:")
-    [void]$builder.AppendLine("            limits:")
-    [void]$builder.AppendLine("              cpu: `"1`"")
-    [void]$builder.AppendLine("              memory: 512Mi")
     [void]$builder.AppendLine("        - name: pushgateway")
     [void]$builder.AppendLine("          image: prom/pushgateway:v1.8.0")
+    [void]$builder.AppendLine("          ports:")
+    [void]$builder.AppendLine("            - name: http1")
+    [void]$builder.AppendLine("              containerPort: 9091")
     [void]$builder.AppendLine("          args:")
     [void]$builder.AppendLine("            - --web.listen-address=0.0.0.0:9091")
     [void]$builder.AppendLine("          resources:")
     [void]$builder.AppendLine("            limits:")
     [void]$builder.AppendLine("              cpu: `"1`"")
-    [void]$builder.AppendLine("              memory: 256Mi")
+    [void]$builder.AppendLine("              memory: 512Mi")
+    [System.IO.File]::WriteAllText($Path, $builder.ToString())
+}
+
+function Write-AppServiceYaml {
+    param(
+        [hashtable]$Values,
+        [string]$PushgatewayUrl,
+        [string]$Path
+    )
+    $builder = [System.Text.StringBuilder]::new()
+    [void]$builder.AppendLine("apiVersion: serving.knative.dev/v1")
+    [void]$builder.AppendLine("kind: Service")
+    [void]$builder.AppendLine("metadata:")
+    [void]$builder.AppendLine("  name: $AppService")
+    [void]$builder.AppendLine("  annotations:")
+    [void]$builder.AppendLine("    run.googleapis.com/ingress: all")
+    [void]$builder.AppendLine("spec:")
+    [void]$builder.AppendLine("  template:")
+    [void]$builder.AppendLine("    metadata:")
+    [void]$builder.AppendLine("      annotations:")
+    [void]$builder.AppendLine("        autoscaling.knative.dev/minScale: `"$MinInstances`"")
+    [void]$builder.AppendLine("        run.googleapis.com/cpu-throttling: `"false`"")
+    [void]$builder.AppendLine("    spec:")
+    [void]$builder.AppendLine("      serviceAccountName: $ServiceAccountEmail")
+    [void]$builder.AppendLine("      containers:")
+    [void]$builder.AppendLine("        - name: app")
+    [void]$builder.AppendLine("          image: $AppImage")
+    [void]$builder.AppendLine("          ports:")
+    [void]$builder.AppendLine("            - name: http1")
+    [void]$builder.AppendLine("              containerPort: 8501")
+    [void]$builder.AppendLine("          env:")
+    Add-SecretEnvYaml $builder $Values $AppSecretEnvKeys "            "
+    Add-LiteralEnvYaml $builder "PROMETHEUS_PUSHGATEWAY_URL" $PushgatewayUrl "            "
+    [void]$builder.AppendLine("          resources:")
+    [void]$builder.AppendLine("            limits:")
+    [void]$builder.AppendLine("              cpu: `"2`"")
+    [void]$builder.AppendLine("              memory: 4Gi")
+    [System.IO.File]::WriteAllText($Path, $builder.ToString())
+}
+
+function Write-PrometheusServiceYaml {
+    param(
+        [string]$AppMetricsHost,
+        [string]$PushgatewayHost,
+        [string]$Path
+    )
+    $builder = [System.Text.StringBuilder]::new()
+    [void]$builder.AppendLine("apiVersion: serving.knative.dev/v1")
+    [void]$builder.AppendLine("kind: Service")
+    [void]$builder.AppendLine("metadata:")
+    [void]$builder.AppendLine("  name: $PrometheusService")
+    [void]$builder.AppendLine("  annotations:")
+    [void]$builder.AppendLine("    run.googleapis.com/ingress: all")
+    [void]$builder.AppendLine("spec:")
+    [void]$builder.AppendLine("  template:")
+    [void]$builder.AppendLine("    metadata:")
+    [void]$builder.AppendLine("      annotations:")
+    [void]$builder.AppendLine("        autoscaling.knative.dev/minScale: `"$MinInstances`"")
+    [void]$builder.AppendLine("        run.googleapis.com/cpu-throttling: `"false`"")
+    [void]$builder.AppendLine("    spec:")
+    [void]$builder.AppendLine("      serviceAccountName: $ServiceAccountEmail")
+    [void]$builder.AppendLine("      containers:")
+    [void]$builder.AppendLine("        - name: prometheus")
+    [void]$builder.AppendLine("          image: $PrometheusImage")
+    [void]$builder.AppendLine("          ports:")
+    [void]$builder.AppendLine("            - name: http1")
+    [void]$builder.AppendLine("              containerPort: 9090")
+    [void]$builder.AppendLine("          env:")
+    Add-LiteralEnvYaml $builder "APP_METRICS_HOST" $AppMetricsHost "            "
+    Add-LiteralEnvYaml $builder "PUSHGATEWAY_HOST" $PushgatewayHost "            "
+    [void]$builder.AppendLine("          resources:")
+    [void]$builder.AppendLine("            limits:")
+    [void]$builder.AppendLine("              cpu: `"1`"")
+    [void]$builder.AppendLine("              memory: 512Mi")
+    [System.IO.File]::WriteAllText($Path, $builder.ToString())
+}
+
+function Write-GrafanaServiceYaml {
+    param(
+        [hashtable]$Values,
+        [string]$PrometheusUrl,
+        [string]$Path
+    )
+    $builder = [System.Text.StringBuilder]::new()
+    [void]$builder.AppendLine("apiVersion: serving.knative.dev/v1")
+    [void]$builder.AppendLine("kind: Service")
+    [void]$builder.AppendLine("metadata:")
+    [void]$builder.AppendLine("  name: $GrafanaService")
+    [void]$builder.AppendLine("  annotations:")
+    [void]$builder.AppendLine("    run.googleapis.com/ingress: all")
+    [void]$builder.AppendLine("spec:")
+    [void]$builder.AppendLine("  template:")
+    [void]$builder.AppendLine("    metadata:")
+    [void]$builder.AppendLine("      annotations:")
+    [void]$builder.AppendLine("        autoscaling.knative.dev/minScale: `"$MinInstances`"")
+    [void]$builder.AppendLine("        run.googleapis.com/cpu-throttling: `"false`"")
+    [void]$builder.AppendLine("    spec:")
+    [void]$builder.AppendLine("      serviceAccountName: $ServiceAccountEmail")
+    [void]$builder.AppendLine("      containers:")
     [void]$builder.AppendLine("        - name: grafana")
     [void]$builder.AppendLine("          image: $GrafanaImage")
+    [void]$builder.AppendLine("          ports:")
+    [void]$builder.AppendLine("            - name: http1")
+    [void]$builder.AppendLine("              containerPort: 3000")
     [void]$builder.AppendLine("          env:")
     Add-SecretEnvYaml $builder $Values @("GRAFANA_ADMIN_PASSWORD") "            "
     Add-LiteralEnvYaml $builder "GF_SECURITY_ADMIN_USER" "admin" "            "
     Add-LiteralEnvYaml $builder "GF_USERS_ALLOW_SIGN_UP" "false" "            "
     Add-LiteralEnvYaml $builder "GF_SERVER_HTTP_PORT" "3000" "            "
-    Add-LiteralEnvYaml $builder "GF_SERVER_ROOT_URL" "%(protocol)s://%(domain)s/grafana/" "            "
-    Add-LiteralEnvYaml $builder "GF_SERVER_SERVE_FROM_SUB_PATH" "true" "            "
+    Add-LiteralEnvYaml $builder "GF_PROMETHEUS_URL" $PrometheusUrl "            "
     [void]$builder.AppendLine("          resources:")
     [void]$builder.AppendLine("            limits:")
     [void]$builder.AppendLine("              cpu: `"1`"")
@@ -279,36 +357,81 @@ function Write-ServiceYaml {
 
 function Invoke-LocalDockerBuilds {
     $registryHost = "$Region-docker.pkg.dev"
-    & gcloud auth configure-docker $registryHost --quiet
+    & gcloud auth configure-docker $registryHost --quiet *> $null
     if ($LASTEXITCODE -ne 0) {
         throw "gcloud auth configure-docker failed for $registryHost"
     }
 
     $builds = @(
-        @{ Image = $AppImage; Dockerfile = "Dockerfile"; BuildArg = "PYTHON_BASE_IMAGE=$PythonBaseImage"; NoCache = $false },
-        @{ Image = $ProxyImage; Dockerfile = "docker/cloudrun/proxy/Dockerfile"; BuildArg = "PROXY_BASE_IMAGE=$ProxyBaseImage"; NoCache = $true },
-        @{ Image = $PrometheusImage; Dockerfile = "docker/cloudrun/prometheus/Dockerfile"; BuildArg = "PROMETHEUS_BASE_IMAGE=$PrometheusBaseImage"; NoCache = $false },
-        @{ Image = $GrafanaImage; Dockerfile = "docker/cloudrun/grafana/Dockerfile"; BuildArg = "GRAFANA_BASE_IMAGE=$GrafanaBaseImage"; NoCache = $false }
+        @{ Image = $AppImage; Dockerfile = "Dockerfile"; BuildArg = "PYTHON_BASE_IMAGE=$PythonBaseImage" },
+        @{ Image = $PrometheusImage; Dockerfile = "docker/cloudrun/prometheus/Dockerfile"; BuildArg = "PROMETHEUS_BASE_IMAGE=$PrometheusBaseImage" },
+        @{ Image = $GrafanaImage; Dockerfile = "docker/cloudrun/grafana/Dockerfile"; BuildArg = "GRAFANA_BASE_IMAGE=$GrafanaBaseImage" }
     )
 
     foreach ($build in $builds) {
         $image = $build["Image"]
         $dockerfile = $build["Dockerfile"]
         $buildArg = $build["BuildArg"]
-        $buildArgs = @("build", "--platform", $ImagePlatform, "--build-arg", $buildArg)
-        if ($build["NoCache"]) {
-            $buildArgs += "--no-cache"
-        }
-        $buildArgs += @("-t", $image, "-f", $dockerfile, ".")
-        & docker @buildArgs
+        & docker build --platform $ImagePlatform --build-arg $buildArg -t $image -f $dockerfile . *> $null
         if ($LASTEXITCODE -ne 0) {
             throw "docker build failed for $image"
         }
-        & docker push $image
+        & docker push $image *> $null
         if ($LASTEXITCODE -ne 0) {
             throw "docker push failed for $image"
         }
     }
+}
+
+function Set-ServicePublicAccess {
+    param([string]$ServiceName)
+    if ($AllowUnauthenticated) {
+        & gcloud run services add-iam-policy-binding $ServiceName `
+            --project $Project `
+            --region $Region `
+            --member allUsers `
+            --role roles/run.invoker `
+            --quiet *> $null
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud run services add-iam-policy-binding failed for $ServiceName"
+        }
+    }
+    else {
+        & gcloud run services remove-iam-policy-binding $ServiceName `
+            --project $Project `
+            --region $Region `
+            --member allUsers `
+            --role roles/run.invoker `
+            --quiet *> $null
+        if ($LASTEXITCODE -ne 0) {
+            throw "gcloud run services remove-iam-policy-binding failed for $ServiceName"
+        }
+    }
+}
+
+function Get-ServiceUrl {
+    param([string]$ServiceName)
+    $output = & gcloud run services describe $ServiceName `
+        --project $Project `
+        --region $Region `
+        --format "value(status.url)"
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud run services describe failed for $ServiceName"
+    }
+    return ($output | Out-String).Trim()
+}
+
+function Deploy-ServiceYaml {
+    param(
+        [string]$ServiceName,
+        [string]$YamlPath
+    )
+    & gcloud run services replace $YamlPath --project $Project --region $Region *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw "gcloud run services replace failed for $ServiceName"
+    }
+    Set-ServicePublicAccess $ServiceName
+    return Get-ServiceUrl $ServiceName
 }
 
 $EnvValues = Read-EnvFile $EnvFile
@@ -318,7 +441,6 @@ Set-Default $EnvValues "LLMOPS_PROMPT_VERSION" "v2"
 Set-Default $EnvValues "LLMOPS_SCHEMA_VERSION" "v2"
 Set-Default $EnvValues "LLMOPS_TRACE_TEXT" "false"
 Set-Default $EnvValues "PROMETHEUS_METRICS_PORT" "9108"
-Set-Default $EnvValues "PROMETHEUS_PUSHGATEWAY_URL" "http://127.0.0.1:9091"
 Set-Default $EnvValues "LLMOPS_PRICING_FILE" "/app/configs/model_pricing.yaml"
 Set-Default $EnvValues "EASYOCR_MODEL_DIR" "/models/easyocr"
 Set-Default $EnvValues "LAYOUT_WORKER_PYTHON" "/app/.venv/bin/python"
@@ -336,9 +458,12 @@ if ([string]::IsNullOrWhiteSpace($Tag)) {
 
 $ImageBase = "$Region-docker.pkg.dev/$Project/$Repo"
 $AppImage = "$ImageBase/gl-doc-capstone-app:$Tag"
-$ProxyImage = "$ImageBase/gl-doc-capstone-proxy:$Tag"
 $PrometheusImage = "$ImageBase/gl-doc-capstone-prometheus:$Tag"
 $GrafanaImage = "$ImageBase/gl-doc-capstone-grafana:$Tag"
+$AppService = "$Service-app"
+$PrometheusService = "$Service-prometheus"
+$GrafanaService = "$Service-grafana"
+$PushgatewayService = "$Service-pushgateway"
 $ServiceAccountName = "$Service-runtime"
 $ServiceAccountEmail = "$ServiceAccountName@$Project.iam.gserviceaccount.com"
 
@@ -346,16 +471,22 @@ if ($DryRun) {
     Write-Output "Dry run OK"
     Write-Output "Project: $Project"
     Write-Output "Region: $Region"
-    Write-Output "Service: $Service"
+    Write-Output "Service prefix: $Service"
     Write-Output "Repo: $Repo"
     Write-Output "Image platform: $ImagePlatform"
     Write-Output "Setup infra: $SetupInfra"
     Write-Output "Sync secrets: $SyncSecrets"
-    Write-Output "Images:"
-    Write-Output "  $AppImage"
-    Write-Output "  $ProxyImage"
-    Write-Output "  $PrometheusImage"
-    Write-Output "  $GrafanaImage"
+    Write-Output "App service: $AppService"
+    Write-Output "Grafana service: $GrafanaService"
+    Write-Output "Prometheus service: $PrometheusService"
+    Write-Output "Pushgateway service: $PushgatewayService"
+    Write-Output "App image: $AppImage"
+    Write-Output "Prometheus image: $PrometheusImage"
+    Write-Output "Grafana image: $GrafanaImage"
+    Write-Output "Pushgateway image: prom/pushgateway:v1.8.0"
+    Write-Output "Pushgateway target URL: resolved after deploy"
+    Write-Output "Prometheus targets: app /metrics + pushgateway /metrics"
+    Write-Output "Grafana target: direct Prometheus service URL"
     exit 0
 }
 
@@ -394,52 +525,38 @@ if ($SetupInfra) {
 }
 
 if ($SyncSecrets) {
-    foreach ($key in ($AppEnvKeys + @("GRAFANA_ADMIN_PASSWORD", "OPS_BASIC_AUTH_USER", "OPS_BASIC_AUTH_PASSWORD"))) {
+    foreach ($key in ($AppSecretEnvKeys + @("GRAFANA_ADMIN_PASSWORD"))) {
         Sync-Secret $EnvValues $key
     }
 }
 
 Invoke-LocalDockerBuilds
 
-$serviceYaml = [System.IO.Path]::GetTempFileName()
+$pushgatewayYaml = [System.IO.Path]::GetTempFileName()
+$appYaml = [System.IO.Path]::GetTempFileName()
+$prometheusYaml = [System.IO.Path]::GetTempFileName()
+$grafanaYaml = [System.IO.Path]::GetTempFileName()
+
 try {
-    Write-ServiceYaml $EnvValues $serviceYaml
-    & gcloud run services replace $serviceYaml --project $Project --region $Region
-    if ($LASTEXITCODE -ne 0) {
-        throw "gcloud run services replace failed for $Service"
-    }
+    Write-PushgatewayServiceYaml $pushgatewayYaml
+    $PushgatewayUrl = Deploy-ServiceYaml $PushgatewayService $pushgatewayYaml
+
+    Write-AppServiceYaml $EnvValues $PushgatewayUrl $appYaml
+    $AppUrl = Deploy-ServiceYaml $AppService $appYaml
+
+    $AppMetricsHost = Get-HostFromUrl $AppUrl
+    $PushgatewayHost = Get-HostFromUrl $PushgatewayUrl
+    Write-PrometheusServiceYaml $AppMetricsHost $PushgatewayHost $prometheusYaml
+    $PrometheusUrl = Deploy-ServiceYaml $PrometheusService $prometheusYaml
+
+    Write-GrafanaServiceYaml $EnvValues $PrometheusUrl $grafanaYaml
+    $GrafanaUrl = Deploy-ServiceYaml $GrafanaService $grafanaYaml
 }
 finally {
-    Remove-Item $serviceYaml -Force -ErrorAction SilentlyContinue
+    Remove-Item $pushgatewayYaml, $appYaml, $prometheusYaml, $grafanaYaml -Force -ErrorAction SilentlyContinue
 }
 
-if ($AllowUnauthenticated) {
-    & gcloud run services add-iam-policy-binding $Service `
-        --project $Project `
-        --region $Region `
-        --member allUsers `
-        --role roles/run.invoker `
-        --quiet
-    if ($LASTEXITCODE -ne 0) {
-        throw "gcloud run services add-iam-policy-binding failed for $Service"
-    }
-}
-else {
-    & gcloud run services remove-iam-policy-binding $Service `
-        --project $Project `
-        --region $Region `
-        --member allUsers `
-        --role roles/run.invoker `
-        --quiet
-    if ($LASTEXITCODE -ne 0) {
-        throw "gcloud run services remove-iam-policy-binding failed for $Service"
-    }
-}
-
-& gcloud run services describe $Service `
-    --project $Project `
-    --region $Region `
-    --format "value(status.url)"
-if ($LASTEXITCODE -ne 0) {
-    throw "gcloud run services describe failed for $Service"
-}
+Write-Output "App URL: $AppUrl"
+Write-Output "Grafana URL: $GrafanaUrl"
+Write-Output "Prometheus URL: $PrometheusUrl"
+Write-Output "Pushgateway URL: $PushgatewayUrl"

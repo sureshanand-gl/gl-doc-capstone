@@ -80,7 +80,7 @@ Notes:
 - If GPT endpoint is blocked by corporate DLP/Zscaler, the app falls back automatically to local extraction.
 - Set `LLMOPS_PROMPT_VERSION=v2` and `LLMOPS_SCHEMA_VERSION=v2` for Milestone 2 contract.
 - `PROMETHEUS_METRICS_PORT` exposes `/metrics` from app process when set.
-- `PROMETHEUS_PUSHGATEWAY_URL` lets `scripts/run_llmops_pipeline.py` publish per-run rollups for Grafana.
+- `PROMETHEUS_PUSHGATEWAY_URL` lets `scripts/run_llmops_pipeline.py` publish per-run rollups for Grafana. Local default points at localhost; Cloud Run deploy script rewires it to deployed Pushgateway service URL.
 - `LLMOPS_PRICING_FILE` defaults to `configs/model_pricing.yaml` and seeds `gpt-4o-mini` token pricing.
 - `EASYOCR_MODEL_DIR` and `QWEN_MODEL_DIR` let Docker mounts override repo-root model lookup.
 - `LAYOUT_WORKER_PYTHON` is optional. If unset, backend tries `.venv-layout`, then current Python runtime.
@@ -99,6 +99,7 @@ Then upload any `jpg`, `jpeg`, `png`, `pdf`, or `docx` file.
 ## 4. Quick Validation
 
 ```bash
+uv sync
 uv run ruff check .
 uv run python -m py_compile app_backend.py app_frontend.py
 uv run pytest -q
@@ -121,6 +122,18 @@ field accuracy and latency PNG charts, and `pipeline_dag.mmd`. `OPENAI_API_KEY` 
 required. `OPENAI_API_BASE` is optional and defaults to the configured OpenAI-compatible
 endpoint. When provider response includes token usage, report now also includes
 prompt/completion/total tokens plus computed USD cost from `configs/model_pricing.yaml`.
+
+Deployed Cloud Run UI validation with Playwright:
+
+```bash
+uv run python -m playwright install chromium
+uv run python scripts/run_playwright_dataset_validation.py --base-url https://gl-doc-capstone-app-khzeyysbeq-uc.a.run.app/
+```
+
+This writes `outputs/playwright_dataset_validation/summary.json`,
+`outputs/playwright_dataset_validation/results.csv`, and failure screenshots under
+`outputs/playwright_dataset_validation/failures/`. `pdf` and `jpg` files are compared
+against dataset truth CSVs; `docx` files run as smoke-only validations.
 
 ## 4A. Docker Observability Stack
 
@@ -153,6 +166,23 @@ docker compose run --rm app uv run python scripts/run_llmops_pipeline.py --datas
 This pushes summary gauges to Pushgateway when `PROMETHEUS_PUSHGATEWAY_URL` is set.
 
 For the full local and GitHub Actions LLMOps workflow, see `docs/llmops.md`.
+
+## 4B. Cloud Run Deployment
+
+Per-service GCP deployment uses local Docker builds plus separate Cloud Run services for app, Grafana, Prometheus, and Pushgateway:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\deploy_cloud_run.ps1 -Project <gcp-project> -SetupInfra -SyncSecrets
+```
+
+```bash
+bash scripts/deploy_cloud_run.sh --project <gcp-project> --setup-infra --sync-secrets
+```
+
+Notes:
+- `--service` / `-Service` sets service-name prefix. Default deploys `gl-doc-capstone-app`, `gl-doc-capstone-grafana`, `gl-doc-capstone-prometheus`, and `gl-doc-capstone-pushgateway`.
+- Scripts build and push images with local Docker, then print four deployed service URLs at end.
+- Prometheus and Grafana Cloud Run images render runtime config from deployed service URLs; no Cloud Run proxy or `/grafana` subpath remains in active GCP path.
 
 ## 5. Code Logic in `03_milestone1_easyocr_only.ipynb`
 

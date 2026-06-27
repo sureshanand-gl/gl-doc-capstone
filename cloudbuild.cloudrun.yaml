@@ -1,14 +1,19 @@
-# Cloud Build recipe for building four Cloud Run support images from local Dockerfiles.
+# Cloud Build recipe for building per-service Cloud Run runtime images.
 
 substitutions:
   _REGION: us-central1
   _REPO: gl-doc-capstone
   _TAG: latest
+  _PYTHON_BASE_IMAGE: python:3.11-slim
+  _PROMETHEUS_BASE_IMAGE: prom/prometheus:v2.54.1
+  _GRAFANA_BASE_IMAGE: grafana/grafana-oss:11.2.0
 
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --build-arg
+      - PYTHON_BASE_IMAGE=${_PYTHON_BASE_IMAGE}
       - -t
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-app:${_TAG}
       - -f
@@ -17,14 +22,8 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
-      - -t
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-proxy:${_TAG}
-      - -f
-      - docker/cloudrun/proxy/Dockerfile
-      - .
-  - name: gcr.io/cloud-builders/docker
-    args:
-      - build
+      - --build-arg
+      - PROMETHEUS_BASE_IMAGE=${_PROMETHEUS_BASE_IMAGE}
       - -t
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-prometheus:${_TAG}
       - -f
@@ -33,6 +32,8 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --build-arg
+      - GRAFANA_BASE_IMAGE=${_GRAFANA_BASE_IMAGE}
       - -t
       - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-grafana:${_TAG}
       - -f
@@ -41,6 +42,5 @@ steps:
 
 images:
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-app:${_TAG}
-  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-proxy:${_TAG}
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-prometheus:${_TAG}
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/gl-doc-capstone-grafana:${_TAG}

@@ -15,7 +15,7 @@ This catalog gives one-line purpose summary for every tracked file in repository
 - `app_backend.py` - OCR and extraction backend coordinating providers, fallbacks, layout worker, and telemetry.
 - `app_frontend.py` - Streamlit UI for upload, extraction review, layout preview, and RAG chat.
 - `app_frontend_helpers.py` - helper functions for preview rendering and lightweight retrieval/chat flows.
-- `cloudbuild.cloudrun.yaml` - Cloud Build recipe for building Cloud Run support images.
+- `cloudbuild.cloudrun.yaml` - Cloud Build recipe for building per-service Cloud Run runtime images.
 - `docker-compose.yml` - local multi-container stack for app, Prometheus, Pushgateway, and Grafana.
 - `pyproject.toml` - Python project metadata plus uv, pytest, and Ruff configuration.
 - `uv.lock` - locked dependency graph for reproducible `uv sync` installs.
@@ -55,22 +55,28 @@ This catalog gives one-line purpose summary for every tracked file in repository
 
 ## Scripts
 
-- `scripts/deploy_cloud_run.ps1` - PowerShell deploy helper for building, pushing, and provisioning Cloud Run stack.
-- `scripts/deploy_cloud_run.sh` - Bash deploy helper for building, pushing, and provisioning Cloud Run stack.
+- `scripts/deploy_cloud_run.ps1` - PowerShell deploy helper for Cloud Build plus per-service Cloud Run deployment.
+- `scripts/deploy_cloud_run.sh` - Bash deploy helper for Cloud Build plus per-service Cloud Run deployment.
 - `scripts/layout_worker.py` - lightweight OpenCV sidecar for coarse page region detection.
 - `scripts/run_golden_eval.py` - offline eval runner for local extraction against golden dataset.
 - `scripts/run_llmops_pipeline.py` - live eval runner for prompt, schema, accuracy, and telemetry verification.
 
 ## Deployment and Monitoring Assets
 
-- `docker/cloudrun/grafana/Dockerfile` - Cloud Run Grafana image layering repo provisioning onto base image.
+- `docker/cloudrun/app/default.conf.template` - nginx route template exposing Streamlit UI and Prometheus `/metrics` from one app service URL.
+- `docker/cloudrun/app/entrypoint.sh` - app-container startup wrapper that launches internal Streamlit plus nginx on public port 8501.
+- `docker/cloudrun/grafana/Dockerfile` - Cloud Run Grafana image layering repo provisioning plus datasource templating onto base image.
+- `docker/cloudrun/grafana/entrypoint.sh` - Grafana startup wrapper that renders datasource config from deployed Prometheus URL.
 - `docker/cloudrun/grafana/provisioning/dashboards/dashboards.yml` - dashboard provider config for Cloud Run Grafana.
-- `docker/cloudrun/grafana/provisioning/datasources/prometheus.yml` - datasource config for Cloud Run Grafana.
-- `docker/cloudrun/prometheus/Dockerfile` - Cloud Run Prometheus image packaging repo scrape config.
-- `docker/cloudrun/prometheus/prometheus.yml` - scrape targets for single-host Cloud Run topology.
-- `docker/cloudrun/proxy/Dockerfile` - nginx proxy image for Cloud Run front-door and auth.
-- `docker/cloudrun/proxy/default.conf.template` - nginx route template for app and observability endpoints.
-- `docker/cloudrun/proxy/entrypoint.sh` - nginx startup script that writes auth file and activates config.
+- `docker/cloudrun/grafana/provisioning/datasources/prometheus.yml` - legacy static Cloud Run datasource config retained from sidecar topology.
+- `docker/cloudrun/grafana/provisioning/datasources/prometheus.yml.tmpl` - runtime datasource template for direct Prometheus Cloud Run URL.
+- `docker/cloudrun/prometheus/Dockerfile` - Cloud Run Prometheus image packaging runtime scrape template plus entrypoint.
+- `docker/cloudrun/prometheus/entrypoint.sh` - Prometheus startup wrapper that renders scrape config from deployed service hosts.
+- `docker/cloudrun/prometheus/prometheus.yml` - legacy static Cloud Run scrape config retained from sidecar topology.
+- `docker/cloudrun/prometheus/prometheus.yml.tmpl` - runtime scrape template for direct app and Pushgateway Cloud Run services.
+- `docker/cloudrun/proxy/Dockerfile` - deprecated nginx proxy image from earlier Cloud Run front-door topology.
+- `docker/cloudrun/proxy/default.conf.template` - deprecated nginx route template from earlier Cloud Run proxy topology.
+- `docker/cloudrun/proxy/entrypoint.sh` - deprecated nginx startup wrapper from earlier Cloud Run proxy topology.
 - `docker/grafana/dashboards/llmops-cost-dashboard.json` - checked-in Grafana dashboard for cost and pipeline monitoring.
 - `docker/grafana/provisioning/dashboards/dashboards.yml` - dashboard provider config for local Grafana.
 - `docker/grafana/provisioning/datasources/prometheus.yml` - datasource config for local Grafana.

@@ -104,7 +104,7 @@ Ports:
 Compose sets:
 
 - `PROMETHEUS_METRICS_PORT=9108`
-- `PROMETHEUS_PUSHGATEWAY_URL=http://pushgateway:9091`
+- `PROMETHEUS_PUSHGATEWAY_URL` to local Pushgateway address for compose runs
 - `LLMOPS_PRICING_FILE=/app/configs/model_pricing.yaml`
 - `EASYOCR_MODEL_DIR=/models/easyocr`
 - `QWEN_MODEL_DIR=/models/qwen`

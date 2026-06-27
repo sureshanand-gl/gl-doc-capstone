@@ -1,0 +1,21 @@
+{
+  "total_files": 1,
+  "status_counts": {
+    "timeout": 1
+  },
+  "file_type_counts": {
+    "jpg": 1
+  },
+  "truth_mode_counts": {
+    "compare": 1
+  },
+  "non_pass_count": 1,
+  "base_url": "https://gl-doc-capstone-app-khzeyysbeq-uc.a.run.app/",
+  "dataset_root": "D:\\Workspace\\Github\\gl-doc-capstone\\Datasets",
+  "output_dir": "D:\\Workspace\\Github\\gl-doc-capstone\\outputs\\playwright_dataset_validation",
+  "selected_types": [
+    "jpg"
+  ],
+  "started_at": "2026-06-27T16:05:57.374485Z",
+  "finished_at": "2026-06-27T16:11:16.343031Z"
+}
