@@ -1,3 +1,5 @@
+"""Live evaluation pipeline for running provider calls against golden invoice examples."""
+
 from pathlib import Path
 from typing import Any
 

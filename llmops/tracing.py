@@ -1,3 +1,5 @@
+"""NDJSON trace writer for extraction runs with optional OCR text redaction."""
+
 import json
 from pathlib import Path
 from typing import Any

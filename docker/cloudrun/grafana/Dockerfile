@@ -1,3 +1,5 @@
+# Grafana image layering repo-managed provisioning onto Cloud Run compatible base.
+
 ARG GRAFANA_BASE_IMAGE=grafana/grafana-oss:11.2.0
 FROM ${GRAFANA_BASE_IMAGE}
 

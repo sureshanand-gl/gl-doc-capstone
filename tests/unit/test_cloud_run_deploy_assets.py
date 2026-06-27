@@ -1,3 +1,5 @@
+"""Regression tests for local Docker and Cloud Run deployment asset wiring."""
+
 from pathlib import Path
 import shutil
 import subprocess

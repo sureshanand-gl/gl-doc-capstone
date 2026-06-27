@@ -1,3 +1,5 @@
+"""Tests for live-provider extraction, CLI config loading, and report generation."""
+
 import json
 import subprocess
 import sys

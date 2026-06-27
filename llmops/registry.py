@@ -1,3 +1,5 @@
+"""Prompt registry loader mapping prompt versions to prompt and schema assets."""
+
 from dataclasses import dataclass
 from pathlib import Path
 

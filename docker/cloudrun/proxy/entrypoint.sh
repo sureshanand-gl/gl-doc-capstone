@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
+# Runtime entrypoint that writes basic-auth file and installs nginx config before start.
+
 set -eu
 
 if [ -z "${OPS_BASIC_AUTH_USER:-}" ]; then

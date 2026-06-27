@@ -1,3 +1,5 @@
+"""Streamlit UI for invoice upload, extraction review, layout preview, and RAG chat."""
+
 from pathlib import Path
 
 import streamlit as st

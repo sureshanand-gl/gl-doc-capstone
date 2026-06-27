@@ -1,3 +1,5 @@
+"""Live LLMOps pipeline CLI for prompt, schema, accuracy, and telemetry verification."""
+
 import json
 import os
 import sys

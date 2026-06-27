@@ -1,3 +1,5 @@
+# Nginx routing template fronting Streamlit, Grafana, Prometheus, and Pushgateway paths.
+
 map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;

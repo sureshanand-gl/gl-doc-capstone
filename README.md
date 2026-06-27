@@ -10,6 +10,11 @@ This project implements Milestone 2 of the invoice understanding pipeline:
 - LLMOps v2 layer for prompt versioning, schema validation, golden evals, trace metadata, and nested line-item scoring
 - Streamlit UI for upload, layout preview, and invoice RAG chat
 
+## Repository Maps
+
+- `docs/repository-file-purpose.md` lists purpose of every tracked file.
+- `docs/repository-folder-purpose.md` explains purpose of each repo folder and local runtime directory.
+
 ## 1. Main Files
 
 - `03_milestone1_easyocr_only.ipynb`:

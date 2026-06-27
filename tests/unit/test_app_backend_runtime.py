@@ -1,3 +1,5 @@
+"""Runtime tests for backend degraded-mode behavior and environment resolution."""
+
 from pathlib import Path
 
 import numpy as np

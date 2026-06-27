@@ -1,3 +1,5 @@
+# Prometheus image packaging repo scrape config for Cloud Run sidecar deployment.
+
 ARG PROMETHEUS_BASE_IMAGE=prom/prometheus:v2.54.1
 FROM ${PROMETHEUS_BASE_IMAGE}
 

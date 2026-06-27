@@ -1,3 +1,5 @@
+# Local multi-service stack for app, Prometheus, Pushgateway, and Grafana observability.
+
 services:
   app:
     build:

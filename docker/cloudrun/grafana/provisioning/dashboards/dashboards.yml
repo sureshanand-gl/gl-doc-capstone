@@ -1,3 +1,5 @@
+# Grafana dashboard provider config for Cloud Run deployment bundle.
+
 apiVersion: 1
 
 providers:

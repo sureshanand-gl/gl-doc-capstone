@@ -1,3 +1,5 @@
+"""Report and chart writers for offline and live LLMOps evaluation artifacts."""
+
 import html
 import json
 import shutil

@@ -1,3 +1,5 @@
+"""OpenAI-compatible live extraction client and normalized provider result models."""
+
 import json
 import time
 from dataclasses import dataclass

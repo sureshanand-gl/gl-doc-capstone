@@ -1,3 +1,5 @@
+<# PowerShell deploy helper that builds, pushes, and optionally provisions Cloud Run stack. #>
+
 param(
     [string]$Project = "",
     [string]$Region = "us-central1",

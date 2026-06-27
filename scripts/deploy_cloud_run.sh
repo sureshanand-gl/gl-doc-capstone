@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Bash deploy helper that builds, pushes, and optionally provisions Cloud Run stack.
+
 set -euo pipefail
 
 PROJECT="${PROJECT:-}"

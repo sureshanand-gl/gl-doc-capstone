@@ -1,3 +1,5 @@
+# Base application image for Streamlit invoice app plus bundled LLMOps runtime assets.
+
 ARG PYTHON_BASE_IMAGE=python:3.11-slim
 FROM ${PYTHON_BASE_IMAGE}
 

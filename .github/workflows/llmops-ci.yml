@@ -1,3 +1,5 @@
+# GitHub Actions workflow running offline LLMOps quality gates on pushes and pull requests.
+
 name: LLMOps CI
 
 on:

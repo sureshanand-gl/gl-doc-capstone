@@ -1,3 +1,5 @@
+"""Tests for offline invoice extraction behavior and schema-valid payload shaping."""
+
 from llmops.local_extraction import extract_invoice_fields_local, parse_model_json_or_fallback
 
 

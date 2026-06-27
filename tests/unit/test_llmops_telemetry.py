@@ -1,3 +1,5 @@
+"""Tests for telemetry normalization, pricing, and Prometheus publication helpers."""
+
 from pathlib import Path
 
 from llmops.telemetry import (

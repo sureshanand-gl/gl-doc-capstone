@@ -1,3 +1,5 @@
+"""JSON-schema validation helpers for invoice extraction payloads."""
+
 import json
 from pathlib import Path
 from typing import Any

@@ -1,3 +1,5 @@
+"""Unit tests for layout preview and lightweight RAG helper behavior."""
+
 import numpy as np
 
 from app_frontend_helpers import build_rag_chunks, draw_layout_boxes, retrieve_chunks

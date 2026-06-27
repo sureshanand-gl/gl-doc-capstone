@@ -1,3 +1,5 @@
+# Prompt registry mapping invoice prompt versions to prompt files and schema contracts.
+
 invoices:
   v1:
     prompt: prompts/invoices/v1/system.md

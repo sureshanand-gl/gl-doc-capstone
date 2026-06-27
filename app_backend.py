@@ -1,3 +1,5 @@
+"""Invoice OCR backend orchestrating document parsing, provider routing, and telemetry."""
+
 import atexit
 import json
 import os

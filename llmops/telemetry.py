@@ -1,3 +1,5 @@
+"""Prometheus metrics and token-cost telemetry helpers for extraction and eval flows."""
+
 import time
 from pathlib import Path
 from threading import Lock

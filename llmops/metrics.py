@@ -1,3 +1,5 @@
+"""Golden-dataset loaders and accuracy scoring helpers for invoice extraction evals."""
+
 import json
 from pathlib import Path
 from typing import Any

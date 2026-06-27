@@ -1,3 +1,5 @@
+"""UI helper functions for layout previews and lightweight OCR-backed RAG workflows."""
+
 import os
 import re
 import tempfile

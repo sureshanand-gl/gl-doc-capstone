@@ -1,3 +1,5 @@
+# Project metadata and tool configuration for uv, pytest, and Ruff.
+
 [project]
 name = "teamd-milestone1"
 version = "0.1.0"

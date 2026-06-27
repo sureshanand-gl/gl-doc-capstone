@@ -1,3 +1,5 @@
+"""OpenCV layout-worker sidecar returning coarse document regions for preview overlays."""
+
 import argparse
 import json
 import sys

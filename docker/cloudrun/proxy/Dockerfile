@@ -1,3 +1,5 @@
+# Nginx reverse-proxy image exposing app and protecting observability endpoints on Cloud Run.
+
 ARG PROXY_BASE_IMAGE=nginx:1.27-alpine
 FROM ${PROXY_BASE_IMAGE}
 

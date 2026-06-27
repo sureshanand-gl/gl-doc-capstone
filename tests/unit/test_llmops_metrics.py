@@ -1,3 +1,5 @@
+"""Tests for field-accuracy metrics, trace output, and golden-eval report aggregation."""
+
 from pathlib import Path
 import json
 import subprocess

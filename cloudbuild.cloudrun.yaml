@@ -1,3 +1,5 @@
+# Cloud Build recipe for building four Cloud Run support images from local Dockerfiles.
+
 substitutions:
   _REGION: us-central1
   _REPO: gl-doc-capstone

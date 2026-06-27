@@ -1,3 +1,5 @@
+# Docker build context exclusions for local dev caches, datasets, and generated outputs.
+
 .git
 .github
 .pytest_cache

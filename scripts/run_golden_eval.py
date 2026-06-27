@@ -1,3 +1,5 @@
+"""Offline golden-dataset evaluator for local regex invoice extraction results."""
+
 import json
 import sys
 from argparse import ArgumentParser

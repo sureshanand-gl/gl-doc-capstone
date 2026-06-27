@@ -1,3 +1,5 @@
+"""Local regex extraction and normalization helpers for offline invoice processing."""
+
 import json
 import re
 from typing import Any

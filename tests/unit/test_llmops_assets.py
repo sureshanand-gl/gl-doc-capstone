@@ -1,3 +1,5 @@
+"""Tests covering prompt, schema, and dataset asset alignment."""
+
 from pathlib import Path
 
 from llmops.registry import load_prompt_registry
